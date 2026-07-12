@@ -42,7 +42,7 @@ export function ResearchPage({ language }: PageLanguageProps) {
         description={{ zh: '发现轴承、摩擦学、材料、润滑、故障诊断与寿命预测的学术成果。', en: 'Discover academic work on bearings, tribology, materials, lubrication, diagnostics and life prediction.' }}
         meta={<span><BookOpen aria-hidden="true" />OpenAlex · Crossref · DOI</span>}
       />
-      <DemoNotice language={language}>{language === 'zh' ? '仅展示论文元数据、双语摘要和合法原文链接，不复制受版权保护的全文。' : 'Only metadata, bilingual summaries and lawful source links are shown; copyrighted full text is not copied.'}</DemoNotice>
+      <DemoNotice language={language} mode="policy">{language === 'zh' ? '仅展示真实论文元数据、说明性双语摘要和合法原文链接，不复制受版权保护的全文；开放获取未知时不会冒充“非开放”。' : 'Only real metadata, explanatory bilingual summaries and lawful source links are shown; copyrighted full text is not copied, and unknown OA status is not presented as closed.'}</DemoNotice>
 
       <form className="research-filters" role="search" onSubmit={(event) => event.preventDefault()}>
         <label className="research-filters__search">

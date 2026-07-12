@@ -24,6 +24,8 @@ const resources = {
       common: {
         demo: '演示数据',
         demoNote: '所有数据仅用于产品演示',
+        live: '真实内容快照',
+        liveNote: '公开来源，每 6 小时自动更新',
         close: '关闭',
       },
     },
@@ -50,6 +52,8 @@ const resources = {
       common: {
         demo: 'Sample data',
         demoNote: 'All data is for product demonstration only',
+        live: 'Live source snapshot',
+        liveNote: 'Public sources, refreshed every 6 hours',
         close: 'Close',
       },
     },

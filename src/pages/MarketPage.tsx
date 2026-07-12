@@ -37,7 +37,7 @@ export function MarketPage({ language }: PageLanguageProps) {
         description={{ zh: '从应用、材料、制造与监测技术中识别轴承产业的下一条增长曲线。', en: 'Identify the bearing industry’s next growth curves across applications, materials, manufacturing and monitoring.' }}
         meta={<span><Orbit aria-hidden="true" />{language === 'zh' ? '趋势证据 · 技术成熟度 · 时间跨度' : 'Trend evidence · maturity · horizon'}</span>}
       />
-      <DemoNotice language={language}>{language === 'zh' ? '趋势卡不包含无来源的市场规模预测数字，成熟度仅用于演示分类。' : 'Trend cards avoid unsourced market forecasts; maturity labels are demonstrative.'}</DemoNotice>
+      <DemoNotice language={language} mode={market.data?.demo === true ? 'demo' : 'live'} generatedAt={market.data?.generatedAt}>{language === 'zh' ? '趋势卡由真实论文元数据生成，不展示无来源的市场规模、销量或增长预测。' : 'Trend cards are generated from real paper metadata and avoid unsourced market-size, sales or growth forecasts.'}</DemoNotice>
 
       <nav className="segment-control market-horizon" aria-label={language === 'zh' ? '趋势时间跨度' : 'Trend horizon'}>
         {(Object.keys(horizonLabels) as Horizon[]).map((value) => (

@@ -100,7 +100,8 @@ export interface ResearchItem extends BaseContentItem {
   journal: string;
   doi?: string;
   citations: number;
-  openAccess: boolean;
+  /** `null` means the metadata provider did not publish a reliable OA status. */
+  openAccess: boolean | null;
   paperUrl?: string;
 }
 
@@ -187,6 +188,27 @@ export interface ResearchResponse {
 export interface SourcesResponse {
   items: SourceRecord[];
   demo: boolean;
+}
+
+export interface SnapshotSourceHealth {
+  id: string;
+  status: 'ok' | 'degraded' | 'failed';
+  itemCount: number;
+  checkedAt: string;
+  message?: string;
+}
+
+/** Static, source-backed dataset generated before each GitHub Pages deploy. */
+export interface LiveContentSnapshot {
+  schemaVersion: 1;
+  mode: 'live';
+  generatedAt: string;
+  feedItems: FeedItem[];
+  marketItems: MarketItem[];
+  researchItems: ResearchItem[];
+  brands: Brand[];
+  sources: SourceRecord[];
+  sourceHealth: SnapshotSourceHealth[];
 }
 
 export interface WechatImportRequest {

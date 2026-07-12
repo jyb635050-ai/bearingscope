@@ -16,7 +16,9 @@ const queryClient = new QueryClient({
   },
 });
 
-const Router = import.meta.env.VITE_STATIC_DEMO === 'true' ? HashRouter : BrowserRouter;
+const Router = import.meta.env.VITE_STATIC_SITE === 'true' || import.meta.env.VITE_STATIC_DEMO === 'true'
+  ? HashRouter
+  : BrowserRouter;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

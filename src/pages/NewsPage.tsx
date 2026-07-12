@@ -53,7 +53,7 @@ export function NewsPage({ language }: PageLanguageProps) {
         <WechatImportForm language={language} brands={(brands.data?.items ?? []).map(({ brand }) => brand)} />
       </div>
 
-      <DemoNotice language={language} />
+      <DemoNotice language={language} mode={feed.data?.demo === true ? 'demo' : 'live'} />
 
       {feed.isLoading ? <LoadingState language={language} /> : feed.isError ? <ErrorState language={language} onRetry={() => feed.refetch()} /> : !feed.data || feed.data.items.length === 0 ? <EmptyState language={language} /> : (
         <>

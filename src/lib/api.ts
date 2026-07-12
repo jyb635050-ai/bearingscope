@@ -110,4 +110,6 @@ const liveBearingApi = {
     }),
 };
 
-export const bearingApi = import.meta.env.VITE_STATIC_DEMO === 'true' ? staticBearingApi : liveBearingApi;
+export const bearingApi = import.meta.env.VITE_STATIC_SITE === 'true' || import.meta.env.VITE_STATIC_DEMO === 'true'
+  ? staticBearingApi
+  : liveBearingApi;

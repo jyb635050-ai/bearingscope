@@ -12,8 +12,8 @@ export function TrendingPanel({ topics, language, onSelectTopic }: TrendingPanel
   return (
     <section className="trending-panel" aria-labelledby="trending-title">
       <header className="panel-header">
-        <h2 id="trending-title"><Flame aria-hidden="true" />{language === 'zh' ? '当前热点' : 'Trending now'}</h2>
-        <p>{language === 'zh' ? '多信源热度 · 随时间衰退' : 'Multi-source score · time-decayed'}</p>
+        <h2 id="trending-title"><Flame aria-hidden="true" />{language === 'zh' ? '最新关注' : 'Latest signals'}</h2>
+        <p>{language === 'zh' ? '按真实发布时间排序 · 来源可追溯' : 'Sorted by real publication time · traceable sources'}</p>
       </header>
       <ol className="trending-list">
         {topics.map((topic) => (
@@ -21,7 +21,7 @@ export function TrendingPanel({ topics, language, onSelectTopic }: TrendingPanel
             <span className="trending-list__rank">{topic.rank}</span>
             <button type="button" onClick={() => onSelectTopic?.(topic.itemId)} disabled={!onSelectTopic}>
               <strong>{localize(topic.title, language)}</strong>
-              <span>{language === 'zh' ? `${topic.sourceCount} 个信源 · ${topic.mentions} 次提及` : `${topic.sourceCount} sources · ${topic.mentions} mentions`} · {formatRelativeTime(topic.lastUpdatedAt, language)}</span>
+              <span>{language === 'zh' ? `${topic.sourceCount} 个来源` : `${topic.sourceCount} source${topic.sourceCount === 1 ? '' : 's'}`} · {formatRelativeTime(topic.lastUpdatedAt, language)}</span>
             </button>
           </li>
         ))}

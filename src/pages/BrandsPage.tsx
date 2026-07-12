@@ -28,7 +28,7 @@ export function BrandsPage({ language }: PageLanguageProps) {
         description={{ zh: '追踪全球十家重点轴承品牌的官方动态、媒体关注与微信公众号线索。', en: 'Track official updates, media attention and WeChat signals from ten major bearing brands.' }}
         meta={<span><RadioTower aria-hidden="true" />{language === 'zh' ? '编辑关注名单 · 非市场排名' : 'Editorial watch list · not a market ranking'}</span>}
       />
-      <DemoNotice language={language}>{brands.data ? localize(brands.data.disclaimer, language) : undefined}</DemoNotice>
+      <DemoNotice language={language} mode={brands.data?.demo === true ? 'demo' : 'live'}>{brands.data ? localize(brands.data.disclaimer, language) : undefined}</DemoNotice>
 
       {brands.isLoading ? <LoadingState language={language} /> : brands.isError ? <ErrorState language={language} onRetry={() => brands.refetch()} /> : !active ? <EmptyState language={language} /> : (
         <div className="brand-radar">
@@ -51,7 +51,7 @@ export function BrandsPage({ language }: PageLanguageProps) {
               <div className="brand-monogram" aria-hidden="true">{active.brand.shortName.slice(0, 3)}</div>
               <div>
                 <h2 id="brand-profile-title">{localize(active.brand.name, language)}</h2>
-                <p><MapPin aria-hidden="true" />{localize(active.brand.country, language)} · {language === 'zh' ? `${active.mentionCount} 条演示动态` : `${active.mentionCount} demo mentions`}</p>
+                <p><MapPin aria-hidden="true" />{localize(active.brand.country, language)} · {language === 'zh' ? `${active.mentionCount} 条当前快照动态` : `${active.mentionCount} current snapshot items`}</p>
               </div>
             </header>
 

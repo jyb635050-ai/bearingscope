@@ -4,7 +4,9 @@
 
 在线演示：[https://jyb635050-ai.github.io/bearingscope/](https://jyb635050-ai.github.io/bearingscope/)
 
-> 当前版本为 V1 演示模式：提供真实可接入的数据架构与高质量样例数据，但不会自动访问外部新闻、论文或微信公众号服务。所有样例记录均应标记 `demo: true`。
+> GitHub Pages 版本现在使用真实公开内容快照：构建时同步新闻 RSS、企业官方新闻页、Crossref 与 OpenAlex 元数据，并每 6 小时自动更新。线上快照不混入演示条目；真实内容不足时构建会失败并保留上一个可用版本。
+
+微信公众号仍遵循合规边界：不使用登录态、验证码或隐藏接口抓取。公开文章需要微信官方授权接口、合规商业数据服务或人工提交并审核的 URL；站点会明确显示该来源当前是否已接入。
 
 ## 功能
 
@@ -15,6 +17,7 @@
 - 本地收藏，无需账号；收藏保存在 `localStorage`。
 - 响应式桌面侧栏与移动抽屉导航，支持键盘操作、清晰焦点状态及减少动态效果。
 - Express 聚合 API，以及面向官网/RSS、新闻服务、论文元数据和合规微信公众号数据源的适配器边界。
+- GitHub Actions 构建期真实数据同步；线上仅保存标题、来源、日期、必要元数据和原文链接，不复制新闻或论文全文。
 
 ## 技术栈
 
@@ -49,11 +52,12 @@ pnpm test             # 运行单元、组件和 API 合约测试
 pnpm run test:watch   # 监听模式运行 Vitest
 pnpm run test:e2e     # 运行桌面与移动端 Playwright 测试
 pnpm run build        # 类型检查并构建 Web 与服务端产物
-pnpm run build:pages  # 构建无外部依赖的 GitHub Pages 静态演示版
+pnpm run sync:content # 同步并校验真实新闻与论文快照
+pnpm run build:pages  # 构建 GitHub Pages 真实快照版
 pnpm start            # 启动构建后的 Express 服务
 ```
 
-生产构建生成 `dist/`（Web）和 `dist-server/`（API）。在部署环境中先运行 `pnpm run build`，再运行 `pnpm start`；默认 API 端口为 `8787`。仓库内置 GitHub Actions 工作流，推送到 `main` 后会自动测试、构建并部署 GitHub Pages。
+生产构建生成 `dist/`（Web）和 `dist-server/`（API）。在部署环境中先运行 `pnpm run build`，再运行 `pnpm start`；默认 API 端口为 `8787`。仓库内置 GitHub Actions 工作流，推送到 `main` 或定时任务触发后会同步真实公开元数据、测试、构建并部署 GitHub Pages。
 
 ## 环境变量
 

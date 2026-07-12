@@ -29,8 +29,8 @@ export function HomePage({ language }: PageLanguageProps) {
   const bookmarks = useBookmarks();
   const [selected, setSelected] = useState<ContentItem | null>(null);
   const items = feed.data?.items ?? [];
-  const featured = items[0];
-  const timeline = items.slice(1);
+  const featured = items.find((item) => item.source.tier === 'official') ?? items[0];
+  const timeline = items.filter((item) => item.id !== featured?.id);
 
   return (
     <main className="page page--home">
@@ -56,7 +56,11 @@ export function HomePage({ language }: PageLanguageProps) {
         <Link className="button button--secondary" to="/news">{language === 'zh' ? '浏览全部动态' : 'Explore all news'}<ArrowRight aria-hidden="true" /></Link>
       </PageHeader>
 
-      <DemoNotice language={language} />
+      <DemoNotice
+        language={language}
+        mode={feed.data?.demo === true ? 'demo' : 'live'}
+        generatedAt={trending.data?.generatedAt}
+      />
 
       {trending.isLoading ? <LoadingState language={language} /> : trending.isError ? <ErrorState language={language} onRetry={() => trending.refetch()} /> : trending.data && (
         <TrendingPanel
@@ -73,7 +77,7 @@ export function HomePage({ language }: PageLanguageProps) {
               <section className="featured-story" aria-labelledby="featured-heading">
                 <header className="section-heading">
                   <h2 id="featured-heading">{language === 'zh' ? '重点报道' : 'Featured intelligence'}</h2>
-                  <span>{language === 'zh' ? '编辑精选' : 'Editorial pick'}</span>
+                  <span>{language === 'zh' ? '最近发布' : 'Most recent'}</span>
                 </header>
                 <ContentCard item={featured} language={language} bookmarked={bookmarks.bookmarked.has(featured.id)} onOpen={setSelected} onToggleBookmark={bookmarks.toggle} />
               </section>

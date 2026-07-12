@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
 
 permissions:
   contents: read
@@ -35,13 +37,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Sync real public metadata
+        run: pnpm sync:content
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+
       - name: Test
         run: pnpm test
 
-      - name: Build static demo
+      - name: Build static live snapshot
         run: pnpm build:pages
         env:
-          VITE_STATIC_DEMO: 'true'
+          VITE_STATIC_SITE: 'true'
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
       - name: Configure Pages

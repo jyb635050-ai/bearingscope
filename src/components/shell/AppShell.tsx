@@ -42,6 +42,7 @@ export function AppShell({ children, language, theme, onLanguageChange, onThemeT
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const staticLive = import.meta.env.VITE_STATIC_SITE === 'true';
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
@@ -83,8 +84,8 @@ export function AppShell({ children, language, theme, onLanguageChange, onThemeT
         <div className="demo-notice">
           <span className="demo-notice__dot" />
           <div>
-            <strong>{t('common.demo')}</strong>
-            <span>{t('common.demoNote')}</span>
+            <strong>{t(staticLive ? 'common.live' : 'common.demo')}</strong>
+            <span>{t(staticLive ? 'common.liveNote' : 'common.demoNote')}</span>
           </div>
         </div>
         <div className="source-promise">

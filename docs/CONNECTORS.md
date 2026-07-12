@@ -1,6 +1,6 @@
 # 数据连接器与来源接入
 
-本文说明 BearingScope 如何从 V1 样例模式扩展到真实来源。核心约束是：只访问公开或已授权的数据，遵守来源条款和访问频率，不绕过登录、验证码、付费墙、反爬机制或平台权限。
+本文说明 BearingScope 的真实公开内容快照与后续连接器。核心约束是：只访问公开或已授权的数据，遵守来源条款和访问频率，不绕过登录、验证码、付费墙、反爬机制或平台权限。
 
 ## 1. 数据流
 
@@ -10,7 +10,7 @@
 
 每个适配器负责自身的认证、分页游标、速率限制、原始字段映射与健康状态；公共管线负责统一模型、时间和语言标准化、去重、来源优先级及可见性。
 
-V1 的 `SampleSourceAdapter` 只读取本地样例数据。`BEARINGSCOPE_DATA_MODE=sample` 时不得发起外网请求。
+本地 Express 的 `SampleSourceAdapter` 仍用于离线开发和合约测试；`BEARINGSCOPE_DATA_MODE=sample` 时不得发起外网请求。GitHub Pages 工作流会单独执行 `pnpm sync:content`，生成 `public/data/live-content.json`，通过最低数量、真实链接和 `demo: false` 校验后才允许部署。
 
 建议的适配器合同：
 
@@ -35,10 +35,12 @@ interface SourceAdapter {
 | --- | --- | --- | --- |
 | 品牌官方新闻室 | 官方 RSS；无 RSS 时使用获准 API 或低频公开页面采集 | 新品、技术、产能、管理、业绩新闻稿 | 在来源名录中逐个验证地区站点、语言、条款和更新时间 |
 | 交易所/监管公告 | 官方公告 API、RSS 或公开下载 | 上市、财报、盈亏、并购、重组 | 以证券实体 ID 关联品牌，不以标题猜测公司 |
-| GDELT | [GDELT DOC API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) | 全球多语新闻发现与二次报道 | 用于扩大覆盖；回链原媒体，不替代官方信源 |
+| Google News RSS | 公开搜索 RSS | 多地区新闻发现与二次报道 | V1.1 已启用；严格机械轴承语义过滤，回链聚合原文入口，不保存全文 |
+| SKF/Timken 官方新闻页 | 低频公开页面读取 | 企业发布、财务、技术与产品新闻 | V1.1 已启用直接链接；页面结构变化会记录为来源降级 |
+| GDELT | [GDELT DOC API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) | 全球多语新闻发现与二次报道 | 当前未作为部署硬依赖；精确短语召回与速率限制不稳定，可后续补充 |
 | NewsAPI | [Everything endpoint](https://newsapi.org/docs/endpoints/everything) | 新闻搜索和补充覆盖 | 需要密钥；确认商业使用、保存期限和展示条款 |
-| OpenAlex | [OpenAlex API](https://developers.openalex.org/api-reference/introduction) | 论文发现、作者、引用、开放获取信息 | 学术主连接器；使用轴承主题词、概念和 DOI 过滤 |
-| Crossref | [Crossref REST API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/access-and-authentication/) | DOI、期刊、发布日期等权威元数据 | 补齐和校验 OpenAlex 结果；使用礼貌池标识 |
+| Crossref | [Crossref REST API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/access-and-authentication/) | DOI、期刊、发布日期等权威元数据 | V1.1 无密钥学术主连接器；逐短语查询、严格标题门控并按 DOI 去重 |
+| OpenAlex | [OpenAlex API](https://developers.openalex.org/api-reference/introduction) | 作者、引用和开放获取信息 | V1.1 尽力增强源；官方建议配置免费 API Key，失败时不影响 Crossref 基础内容 |
 | 微信公众平台 | [官方接口](https://developers.weixin.qq.com/doc/offiaccount/Getting_Started/Overview.html) | 自有或明确授权公众号内容 | 仅在账号权限允许时接入，不假设官方接口可读取任意公众号历史文章 |
 | 合规微信数据服务商 | 有合同与授权的商业 API | 第三方轴承品牌公众号元数据 | 法务/采购确认后接入，记录许可范围与数据保留期 |
 | 微信公开文章 URL | `POST /api/v1/imports/wechat` 人工导入 | 单篇品牌文章 | 校验 URL，进入待审核队列；不自动抓取受限全文 |
