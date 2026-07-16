@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
@@ -17,6 +17,12 @@ import type {
   SnapshotSourceHealth,
   SourceRecord,
 } from '../src/shared/types';
+import {
+  extractTranslationCache,
+  isValidChineseTranslation,
+  normalizeTitleKey,
+  translateMissingTitles,
+} from './title-translation';
 
 const USER_AGENT = 'BearingScope/1.1 (+https://github.com/jyb635050-ai/bearingscope)';
 const generatedAt = new Date().toISOString();
@@ -29,6 +35,8 @@ const fromDate = (() => {
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outputPath = path.join(projectRoot, 'public', 'data', 'live-content.json');
+const deployedSnapshotUrl = process.env.BEARINGSCOPE_LIVE_SNAPSHOT_URL?.trim()
+  || 'https://jyb635050-ai.github.io/bearingscope/data/live-content.json';
 const text = (zh: string, en: string): LocalizedText => ({ zh, en });
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -225,9 +233,13 @@ function publisherSource(article: ParsedNews): SourceRecord {
   const officialBrand = article.officialBrandId
     ? fixtureBrands.find((brand) => brand.id === article.officialBrandId)
     : fixtureBrands.find((brand) => brand.shortName.toLocaleLowerCase() === article.sourceName.toLocaleLowerCase());
+  const localizedOfficialNames: Record<string, string> = {
+    'SKF official newsroom': 'SKF 官方新闻室',
+    'The Timken Company': '铁姆肯公司',
+  };
   return {
     id: hashId('publisher', `${article.sourceName}|${article.sourceUrl ?? ''}`),
-    name: text(article.sourceName, article.sourceName),
+    name: text(localizedOfficialNames[article.sourceName] ?? article.sourceName, article.sourceName),
     type: officialBrand ? 'official' : 'rss',
     tier: officialBrand ? 'official' : 'secondary',
     verified: Boolean(officialBrand),
@@ -251,11 +263,11 @@ function toFeedItem(article: ParsedNews): FeedItem {
     title: text(article.title, article.title),
     originalTitle: article.title,
     summary: text(
-      `这是真实新闻索引，来源为 ${article.sourceName}。本站只保存标题和元数据，请点击“查看原文”阅读完整报道。`,
+      `这是真实新闻索引，来源为 ${source.name.zh}。本站只保存标题和元数据，请点击“查看原文”阅读完整报道。`,
       `This is a real news index entry from ${article.sourceName}. BearingScope stores metadata only; open the source to read the full report.`,
     ),
     keyFacts: [
-      text(`发布来源：${article.sourceName}`, `Publisher: ${article.sourceName}`),
+      text(`发布来源：${source.name.zh}`, `Publisher: ${article.sourceName}`),
       text('未在本站复制新闻全文。', 'Article full text is not copied by BearingScope.'),
     ],
     brandIds: brands,
@@ -647,18 +659,73 @@ function validateSnapshot(snapshot: LiveContentSnapshot): void {
   if (demos.length) throw new Error(`Refusing deployment: live snapshot contains ${demos.length} demo items.`);
   const missingLinks = allItems.filter((item) => !(item.url ?? item.canonicalUrl)?.startsWith('https://'));
   if (missingLinks.length) throw new Error(`Refusing deployment: ${missingLinks.length} live items have no HTTPS source link.`);
+  const untranslatedTitles = allItems.filter((item) => !isValidChineseTranslation(item.originalTitle, item.title.zh));
+  if (untranslatedTitles.length) {
+    throw new Error(`Refusing deployment: ${untranslatedTitles.length} live items do not have a valid Chinese title.`);
+  }
+}
+
+async function loadTranslationCache(): Promise<Map<string, string>> {
+  const snapshots: unknown[] = [];
+  try {
+    snapshots.push(JSON.parse(await readFile(outputPath, 'utf8')) as unknown);
+  } catch {
+    // The first synchronization may not have a local snapshot yet.
+  }
+  try {
+    snapshots.push(JSON.parse(await fetchText(deployedSnapshotUrl, 1)) as unknown);
+  } catch {
+    // The repository snapshot remains a valid cache when the deployed site is unavailable.
+  }
+  return extractTranslationCache(...snapshots);
+}
+
+function applyFeedTranslations(items: FeedItem[], translations: Map<string, string>): FeedItem[] {
+  return items.flatMap((item) => {
+    const translated = translations.get(normalizeTitleKey(item.originalTitle));
+    if (!translated || !isValidChineseTranslation(item.originalTitle, translated)) return [];
+    return [{ ...item, title: { zh: translated, en: item.originalTitle } }];
+  });
+}
+
+function applyResearchTranslations(items: ResearchItem[], translations: Map<string, string>): ResearchItem[] {
+  return items.flatMap((item) => {
+    const translated = translations.get(normalizeTitleKey(item.originalTitle));
+    if (!translated || !isValidChineseTranslation(item.originalTitle, translated)) return [];
+    return [{
+      ...item,
+      title: { zh: translated, en: item.originalTitle },
+      summary: { zh: researchSummary(translated, item.journal).zh, en: item.summary.en },
+    }];
+  });
 }
 
 async function main() {
+  const translationCachePromise = loadTranslationCache();
   const news = await collectNews();
   const [crossref, openAlex] = await Promise.all([collectCrossref(), collectOpenAlex()]);
-  const researchItems = mergeResearch(crossref.items, openAlex.items);
+  const rawResearchItems = mergeResearch(crossref.items, openAlex.items);
+  const translation = await translateMissingTitles(
+    [...news.items, ...rawResearchItems].map((item) => item.originalTitle),
+    await translationCachePromise,
+  );
+  const feedItems = applyFeedTranslations(news.items, translation.translations);
+  const researchItems = applyResearchTranslations(rawResearchItems, translation.translations);
   const brands = snapshotBrands();
   const marketItems = marketFromResearch(researchItems);
   const sourceHealth: SnapshotSourceHealth[] = [
     ...news.health,
     crossref.health,
     openAlex.health,
+    {
+      id: 'title-translation',
+      status: translation.unresolved.length ? (feedItems.length >= 15 && researchItems.length >= 12 ? 'degraded' : 'failed') : 'ok',
+      itemCount: feedItems.length + researchItems.length,
+      checkedAt: generatedAt,
+      message: translation.unresolved.length
+        ? `${translation.unresolved.length} titles were withheld because no valid Chinese translation was produced.`
+        : `Chinese titles complete; ${translation.cacheHitCount} cache hits and ${translation.requestedCount} new translations.`,
+    },
     {
       id: 'wechat-authorized-ingestion', status: 'degraded', itemCount: 0, checkedAt: generatedAt,
       message: 'Authorized API, licensed provider or manually supplied public article URLs are required.',
@@ -668,11 +735,11 @@ async function main() {
     schemaVersion: 1,
     mode: 'live',
     generatedAt,
-    feedItems: news.items,
+    feedItems,
     marketItems,
     researchItems,
     brands,
-    sources: uniqueSources(news.items, researchItems, brands),
+    sources: uniqueSources(feedItems, researchItems, brands),
     sourceHealth,
   };
   validateSnapshot(snapshot);

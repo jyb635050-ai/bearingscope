@@ -5,6 +5,18 @@ import { formatDate, localize, type Language, ui } from '../../lib/i18n';
 import { categoryLabel, kindLabel } from './contentLabels';
 import { SourceBadge } from './SourceBadge';
 
+const horizonLabels = {
+  near: { zh: '近期', en: 'Near term' },
+  mid: { zh: '中期', en: 'Mid term' },
+  long: { zh: '长期', en: 'Long term' },
+} as const;
+
+const maturityLabels = {
+  emerging: { zh: '前沿探索', en: 'Emerging' },
+  scaling: { zh: '规模化中', en: 'Scaling' },
+  established: { zh: '产业成熟', en: 'Established' },
+} as const;
+
 export interface ContentDetailDrawerProps {
   item: ContentItem | null;
   language: Language;
@@ -42,7 +54,7 @@ export function ContentDetailDrawer({ item, language, bookmarked = false, onClos
       </header>
 
       <div className="detail-drawer__scroll">
-        {item.originalTitle && item.originalTitle !== title && (
+        {language === 'en' && item.originalTitle && item.originalTitle !== title && (
           <p className="detail-drawer__original-title" lang={item.originalLanguage}>{item.originalTitle}</p>
         )}
         <p className="detail-drawer__summary">{localize(item.summary, language)}</p>
@@ -87,7 +99,7 @@ export function ContentDetailDrawer({ item, language, bookmarked = false, onClos
         {item.kind === 'market' && (
           <section className="detail-drawer__section detail-drawer__signal">
             <h3>{language === 'zh' ? '信号阶段' : 'Signal stage'}</h3>
-            <p>{item.horizon} · {item.maturity}</p>
+            <p>{horizonLabels[item.horizon][language]} · {maturityLabels[item.maturity][language]}</p>
           </section>
         )}
 

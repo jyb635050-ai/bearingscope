@@ -10,7 +10,7 @@
 
 每个适配器负责自身的认证、分页游标、速率限制、原始字段映射与健康状态；公共管线负责统一模型、时间和语言标准化、去重、来源优先级及可见性。
 
-本地 Express 的 `SampleSourceAdapter` 仍用于离线开发和合约测试；`BEARINGSCOPE_DATA_MODE=sample` 时不得发起外网请求。GitHub Pages 工作流会单独执行 `pnpm sync:content`，生成 `public/data/live-content.json`，通过最低数量、真实链接和 `demo: false` 校验后才允许部署。
+本地 Express 的 `SampleSourceAdapter` 仍用于离线开发和合约测试；`BEARINGSCOPE_DATA_MODE=sample` 时不得发起外网请求。GitHub Pages 工作流会单独执行 `pnpm sync:content`，生成 `public/data/live-content.json`，通过最低数量、真实链接、完整中文标题和 `demo: false` 校验后才允许部署。
 
 建议的适配器合同：
 
@@ -103,6 +103,14 @@ interface SourceAdapter {
 - `publishedAt` 与 `collectedAt` 分开保存，不能用抓取时间替代发布时间。
 - 保留 `originalLanguage` 和原始标题；翻译作为独立字段并标出生成方式。
 - 品牌别名用于检索和关联，例如 `JTEKT`/`Koyo`、`C&U`/`人本`、`ZWZ`/`瓦轴`，但不改写来源原文。
+
+### 中文标题生成与门禁
+
+- `title.en` 和 `originalTitle` 始终保存来源原题；`title.zh` 保存独立中文标题，论文中文说明摘要使用中文标题重建。
+- 同步器优先从仓库快照及上一版已部署快照复用 `originalTitle → title.zh` 缓存，只翻译新增标题；品牌缩写和正式品牌名在翻译前受占位符保护。
+- 当前无密钥构建使用 Google 公共翻译端点作为尽力服务。该端点没有正式服务等级保证，因此实现包含低并发、批处理、重试、缓存和结果校验；长期生产可替换为带认证与配额的正式翻译 API。
+- 译文必须包含中文且不能只是英文原题回填。无法得到有效译文的条目暂不进入中文快照；新闻或论文低于最低数量时整个部署失败，线上继续保留上一版可用内容。
+- 品牌、作者、正式期刊名、DOI、算法缩写等专有标识可保留原文，不把机器翻译结果覆盖回来源字段。
 
 ## 5. 连接器运行要求
 

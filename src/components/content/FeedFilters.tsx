@@ -23,6 +23,15 @@ interface FeedFiltersProps {
 const categories = Object.keys(categoryLabels) as ContentCategory[];
 const sourceTypes: SourceType[] = ['official', 'wechat', 'journal', 'regulator', 'wire', 'rss', 'demo'];
 const defaultRegions = ['Global', 'Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
+const regionLabels: Record<string, { zh: string; en: string }> = {
+  Global: { zh: '全球', en: 'Global' },
+  Europe: { zh: '欧洲', en: 'Europe' },
+  Asia: { zh: '亚洲', en: 'Asia' },
+  'North America': { zh: '北美洲', en: 'North America' },
+  'South America': { zh: '南美洲', en: 'South America' },
+  Africa: { zh: '非洲', en: 'Africa' },
+  Oceania: { zh: '大洋洲', en: 'Oceania' },
+};
 
 export function FeedFilters({ language, value, brandOptions = [], regionOptions, onChange, onReset }: FeedFiltersProps) {
   const all = language === 'zh' ? '全部' : 'All';
@@ -60,7 +69,9 @@ export function FeedFilters({ language, value, brandOptions = [], regionOptions,
           <span>{language === 'zh' ? '地区' : 'Region'}</span>
           <select value={value.region} onChange={(event) => set('region', event.target.value)}>
             <option value="">{all}</option>
-            {(regionOptions ?? defaultRegions.map((region) => ({ value: region, label: region }))).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {(regionOptions ?? defaultRegions.map((region) => ({ value: region, label: region }))).map((option) => (
+              <option key={option.value} value={option.value}>{regionLabels[option.value]?.[language] ?? option.label}</option>
+            ))}
           </select>
         </label>
         <label>

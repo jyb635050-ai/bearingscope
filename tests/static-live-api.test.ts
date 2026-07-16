@@ -16,7 +16,7 @@ const liveItem: FeedItem = {
   kind: 'news',
   newsType: 'technology',
   demo: false,
-  title: { zh: 'Real bearing technology update', en: 'Real bearing technology update' },
+  title: { zh: '真实轴承技术更新', en: 'Real bearing technology update' },
   originalTitle: 'Real bearing technology update',
   summary: { zh: '真实元数据。', en: 'Real metadata.' },
   keyFacts: [],

@@ -53,7 +53,7 @@ export function AppShell({ children, language, theme, onLanguageChange, onThemeT
 
   const sidebar = (
     <>
-      <NavLink className="brand-lockup" to="/" onClick={() => setMenuOpen(false)} aria-label="BearingScope home">
+      <NavLink className="brand-lockup" to="/" onClick={() => setMenuOpen(false)} aria-label={language === 'zh' ? 'BearingScope 主页' : 'BearingScope home'}>
         <BearingMark />
         <span className="brand-lockup__type">
           <strong>{t('brand.name')}</strong>
@@ -61,7 +61,7 @@ export function AppShell({ children, language, theme, onLanguageChange, onThemeT
         </span>
       </NavLink>
 
-      <nav className="primary-nav" aria-label="Primary navigation">
+      <nav className="primary-nav" aria-label={language === 'zh' ? '主导航' : 'Primary navigation'}>
         {navItems.map((item) => {
           const { to, key, icon: Icon } = item;
           const end = 'end' in item ? item.end : undefined;

@@ -75,7 +75,7 @@ export function WechatImportForm({ language, brands = [] }: WechatImportFormProp
         <button type="submit" className="button button--primary" disabled={!isWechatUrl || mutation.isPending}><Send aria-hidden="true" />{mutation.isPending ? (language === 'zh' ? '提交中…' : 'Submitting…') : staticLive ? (language === 'zh' ? '打开审核提交页' : 'Open review request') : (language === 'zh' ? '进入审核队列' : 'Queue for review')}</button>
         {reviewPageOpened && <p className="form-success" role="status"><CheckCircle2 aria-hidden="true" />{language === 'zh' ? 'GitHub 审核页已打开，请确认并提交。' : 'The GitHub review page is open; confirm and submit it there.'}</p>}
         {mutation.isSuccess && <p className="form-success" role="status"><CheckCircle2 aria-hidden="true" />{language === 'zh' ? '已进入审核队列。' : 'Queued for review.'}</p>}
-        {mutation.isError && <p className="field-error" role="alert">{mutation.error.message}</p>}
+        {mutation.isError && <p className="field-error" role="alert">{language === 'zh' ? '提交失败，请稍后重试或检查文章链接。' : mutation.error.message}</p>}
       </form>
     </details>
   );

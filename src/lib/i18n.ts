@@ -5,7 +5,8 @@ export type Language = 'zh' | 'en';
 export function localize(value: LocalizedText | string | undefined, language: Language): string {
   if (!value) return '';
   if (typeof value === 'string') return value;
-  return value[language] || value.zh || value.en;
+  if (language === 'zh') return value.zh?.trim() || '暂无中文内容';
+  return value.en?.trim() || value.zh?.trim() || '';
 }
 
 export function formatDate(value: string, language: Language, options?: Intl.DateTimeFormatOptions): string {
