@@ -1,0 +1,28 @@
+[
+  {
+    "id": "cu-cu-bearing",
+    "brandId": "cu",
+    "accountDisplayName": "C&U人本轴承",
+    "accountId": "gh_4d96502f1cb9",
+    "biz": "MzA3NzMyNDYwMw==",
+    "verified": true,
+    "verifiedAt": "2026-08-18T00:00:00.000Z",
+    "verificationUrl": "https://mp.weixin.qq.com/s/lqnVorvOAi-bCIq9UwVqdg",
+    "articles": [
+      {
+        "appmsgId": "2649688506",
+        "url": "https://mp.weixin.qq.com/s/lqnVorvOAi-bCIq9UwVqdg",
+        "title": {
+          "zh": "锻造｜以锤炼之骨，造就一重新生",
+          "en": "Forging | Tempered by the Hammer, Reborn Anew"
+        },
+        "summary": {
+          "zh": "文章围绕轴承内外圈锻造工艺，解释为何不直接从整块钢材车削，而要经过加热、冲压、扩孔等工序，并介绍锻造对材料组织、强度和后续加工的意义。",
+          "en": "The article explains why bearing rings are forged instead of machined directly from a solid steel block, covering heating, punching and ring expansion and their effects on material structure, strength and downstream machining."
+        },
+        "publishedAt": "2026-08-16T11:52:41.000Z",
+        "coverUrl": "https://mmecoa.qpic.cn/mmecoa_jpg/1ib3YdSZTmliakyia9qwJqBXqZx4JFqawPHZkia8Y93x8XqqA5Qx0JDUYic5TJFYXLyd4jdzDoVxHGlu8vfg5KrRWjN3Y7LwEp8bNXgTRqOnneQM/0?wx_fmt=jpeg"
+      }
+    ]
+  }
+]

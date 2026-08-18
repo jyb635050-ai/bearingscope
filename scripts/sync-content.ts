@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
 import { brands as fixtureBrands } from '../server/data';
+import manualWechatImportsJson from '../data/manual-wechat-imports.json';
 import type {
   Brand,
   ContentCategory,
@@ -39,6 +40,29 @@ const deployedSnapshotUrl = process.env.BEARINGSCOPE_LIVE_SNAPSHOT_URL?.trim()
   || 'https://jyb635050-ai.github.io/bearingscope/data/live-content.json';
 const text = (zh: string, en: string): LocalizedText => ({ zh, en });
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+interface ManualWechatArticle {
+  appmsgId: string;
+  url: string;
+  title: LocalizedText;
+  summary: LocalizedText;
+  publishedAt: string;
+  coverUrl?: string;
+}
+
+interface ManualWechatAccount {
+  id: string;
+  brandId: string;
+  accountDisplayName: string;
+  accountId: string;
+  biz: string;
+  verified: true;
+  verifiedAt: string;
+  verificationUrl: string;
+  articles: ManualWechatArticle[];
+}
+
+const manualWechatImports = manualWechatImportsJson as ManualWechatAccount[];
 
 function hashId(prefix: string, input: string): string {
   return `${prefix}-${createHash('sha256').update(input).digest('hex').slice(0, 16)}`;
@@ -164,6 +188,78 @@ function newsType(categories: ContentCategory[]): NewsItem['newsType'] {
   if (categories.includes('technology')) return 'technology';
   if (categories.includes('product')) return 'product';
   return categories.includes('market') ? 'industry' : 'company';
+}
+
+function validateManualWechatImports(accounts: ManualWechatAccount[]): void {
+  const knownBrands = new Set(fixtureBrands.map((brand) => brand.id));
+  const seenAccounts = new Set<string>();
+  const seenArticles = new Set<string>();
+  for (const account of accounts) {
+    if (!knownBrands.has(account.brandId)) throw new Error(`Unknown WeChat brand mapping: ${account.brandId}`);
+    if (!account.verified || !/^gh_[a-z0-9]+$/i.test(account.accountId) || !account.biz) {
+      throw new Error(`Invalid verified WeChat account metadata: ${account.id}`);
+    }
+    if (seenAccounts.has(account.accountId)) throw new Error(`Duplicate WeChat account ID: ${account.accountId}`);
+    seenAccounts.add(account.accountId);
+    for (const article of account.articles) {
+      const url = new URL(article.url);
+      if (url.protocol !== 'https:' || url.hostname !== 'mp.weixin.qq.com' || !url.pathname.startsWith('/s/')) {
+        throw new Error(`Invalid public WeChat article URL: ${article.url}`);
+      }
+      if (seenArticles.has(article.url)) throw new Error(`Duplicate WeChat article URL: ${article.url}`);
+      if (!safeIsoDate(article.publishedAt) || !article.title.zh || !article.summary.zh) {
+        throw new Error(`Incomplete WeChat article metadata: ${article.url}`);
+      }
+      seenArticles.add(article.url);
+    }
+  }
+}
+
+function manualWechatSource(account: ManualWechatAccount): SourceRecord {
+  return {
+    id: `wechat-${account.id}`,
+    name: text(account.accountDisplayName, account.accountDisplayName),
+    type: 'wechat',
+    tier: 'official',
+    verified: true,
+    brandId: account.brandId,
+    homepage: account.verificationUrl,
+    notes: text(
+      '已通过公开文章核验公众号显示名称与稳定标识；当前收录为人工 URL 导入，不代表已启用自动监控。',
+      'The display name and stable account identifier were verified from a public article. Current coverage is a manual URL import, not automated monitoring.',
+    ),
+  };
+}
+
+function manualWechatFeedItems(accounts: ManualWechatAccount[]): FeedItem[] {
+  return accounts.flatMap((account) => {
+    const source = manualWechatSource(account);
+    return account.articles.map((article) => ({
+      id: hashId('wechat', article.url),
+      kind: 'news' as const,
+      demo: false,
+      title: article.title,
+      originalTitle: article.title.zh,
+      summary: article.summary,
+      keyFacts: [
+        text(`公众号：${account.accountDisplayName}`, `WeChat account: ${account.accountDisplayName}`),
+        text('来源身份已由该公开文章页面核验。', 'Source identity was verified from this public article page.'),
+        text('本站只保存标题、摘要、封面元数据和公开链接，不复制文章全文。', 'BearingScope stores only title, summary, cover metadata and the public link; full text is not copied.'),
+      ],
+      brandIds: [account.brandId],
+      region: 'China',
+      categories: ['technology'] as ContentCategory[],
+      source,
+      originalLanguage: 'zh',
+      publishedAt: article.publishedAt,
+      fetchedAt: generatedAt,
+      url: article.url,
+      canonicalUrl: article.url,
+      confidence: 0.98,
+      relatedSourceUrls: [],
+      newsType: 'technology' as const,
+    }));
+  });
 }
 
 interface NewsFeedConfig {
@@ -622,10 +718,12 @@ function marketFromResearch(research: ResearchItem[]): MarketItem[] {
   }));
 }
 
-function snapshotBrands(): Brand[] {
+function snapshotBrands(accounts: ManualWechatAccount[]): Brand[] {
   return fixtureBrands.map((brand) => ({
     ...brand,
-    wechatDisplayNames: [`${brand.shortName} 品牌公众号来源（显示名待人工核验）`],
+    wechatDisplayNames: accounts
+      .filter((account) => account.brandId === brand.id)
+      .map((account) => account.accountDisplayName),
   }));
 }
 
@@ -641,6 +739,9 @@ function uniqueSources(feed: FeedItem[], research: ResearchItem[], brands: Brand
     homepage: 'https://openalex.org/', notes: text('用于尽力补充开放获取与引用信息；正式稳定使用建议配置免费 API Key。', 'Best-effort OA and citation enrichment; a free API key is recommended for stable production use.'),
   });
   for (const brand of brands) {
+    const hasVerifiedWechatSource = [...records.values()]
+      .some((source) => source.type === 'wechat' && source.brandId === brand.id && source.verified);
+    if (hasVerifiedWechatSource) continue;
     records.set(`wechat-${brand.id}`, {
       id: `wechat-${brand.id}`,
       name: text(`${brand.shortName} 品牌微信公众号（待授权接入）`, `${brand.shortName} brand WeChat source (authorization pending)`),
@@ -701,6 +802,7 @@ function applyResearchTranslations(items: ResearchItem[], translations: Map<stri
 }
 
 async function main() {
+  validateManualWechatImports(manualWechatImports);
   const translationCachePromise = loadTranslationCache();
   const news = await collectNews();
   const [crossref, openAlex] = await Promise.all([collectCrossref(), collectOpenAlex()]);
@@ -709,9 +811,12 @@ async function main() {
     [...news.items, ...rawResearchItems].map((item) => item.originalTitle),
     await translationCachePromise,
   );
-  const feedItems = applyFeedTranslations(news.items, translation.translations);
+  const feedItems = [
+    ...applyFeedTranslations(news.items, translation.translations),
+    ...manualWechatFeedItems(manualWechatImports),
+  ].sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt)).slice(0, 120);
   const researchItems = applyResearchTranslations(rawResearchItems, translation.translations);
-  const brands = snapshotBrands();
+  const brands = snapshotBrands(manualWechatImports);
   const marketItems = marketFromResearch(researchItems);
   const sourceHealth: SnapshotSourceHealth[] = [
     ...news.health,
@@ -725,6 +830,12 @@ async function main() {
       message: translation.unresolved.length
         ? `${translation.unresolved.length} titles were withheld because no valid Chinese translation was produced.`
         : `Chinese titles complete; ${translation.cacheHitCount} cache hits and ${translation.requestedCount} new translations.`,
+    },
+    {
+      id: 'wechat-manual-imports', status: 'ok',
+      itemCount: manualWechatImports.reduce((total, account) => total + account.articles.length, 0),
+      checkedAt: generatedAt,
+      message: `${manualWechatImports.length} verified account mapping(s) loaded from manually reviewed public article URLs.`,
     },
     {
       id: 'wechat-authorized-ingestion', status: 'degraded', itemCount: 0, checkedAt: generatedAt,
