@@ -12,8 +12,8 @@ export function TrendingPanel({ topics, language, onSelectTopic }: TrendingPanel
   return (
     <section className="trending-panel" aria-labelledby="trending-title">
       <header className="panel-header">
-        <h2 id="trending-title"><Flame aria-hidden="true" />{language === 'zh' ? '最新关注' : 'Latest signals'}</h2>
-        <p>{language === 'zh' ? '按真实发布时间排序 · 来源可追溯' : 'Sorted by real publication time · traceable sources'}</p>
+        <h2 id="trending-title"><Flame aria-hidden="true" />{language === 'zh' ? '每日行业热点' : 'Daily industry signals'}</h2>
+        <p>{language === 'zh' ? '近七日 · 综合时效、来源与行业事件排序' : 'Past 7 days · ranked by freshness, source and industry impact'}</p>
       </header>
       <ol className="trending-list">
         {topics.map((topic) => (

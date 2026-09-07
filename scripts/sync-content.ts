@@ -271,6 +271,25 @@ interface NewsFeedConfig {
 }
 
 const newsFeeds: NewsFeedConfig[] = [
+  ...fixtureBrands.map((brand) => ({
+    id: `brand-${brand.id}`,
+    query: `(${brand.id === 'jtekt-koyo' ? 'JTEKT OR Koyo OR 捷太格特' : '"' + brand.shortName + '"'}) (bearing OR bearings OR earnings OR factory OR acquisition) when:90d`,
+    hl: 'en-US', gl: 'US', ceid: 'US:en',
+  })),
+  ...[
+    '轴承 (新品 OR 技术 OR 研发 OR 机器人 OR 风电)',
+    '轴承 (营收 OR 利润 OR 上市 OR 并购 OR 重组)',
+    '轴承 (投产 OR 扩产 OR 工厂 OR 出口 OR 订单)',
+    '(人本 OR 瓦轴 OR 洛轴 OR 哈轴 OR 万向 OR 五洲新春 OR 长盛轴承 OR 苏轴股份) 轴承',
+    '(斯凯孚 OR 舍弗勒 OR 铁姆肯 OR 恩斯克 OR 恩梯恩 OR 捷太格特) 轴承',
+  ].map((query, index) => ({
+    id: `china-sector-${index + 1}`, query: `${query} when:90d`,
+    hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans',
+  })),
+  ...['bearing-news.com', 'bearingtips.com', 'designworldonline.com', 'powertransmission.com', 'bearingnet.net'].map((domain) => ({
+    id: `industry-${domain}`, query: `site:${domain} bearing when:90d`,
+    hl: 'en-US', gl: 'US', ceid: 'US:en',
+  })),
   {
     id: 'google-brands',
     query: '(SKF OR Schaeffler OR Timken OR "NSK bearings" OR "NTN Bearing" OR JTEKT OR Koyo OR MinebeaMitsumi OR "NACHI bearings" OR "C&U Bearings" OR ZWZ) (bearings OR earnings OR acquisition OR launch OR factory OR technology) when:120d',
@@ -464,6 +483,22 @@ async function collectNews(): Promise<{ items: FeedItem[]; health: SnapshotSourc
   }
 
   const official = await collectOfficialNews();
+  for (const config of [
+    { id: 'rss-skf-evolution', url: 'https://evolution.skf.com/feed/', name: 'SKF Evolution', brand: 'skf' },
+    { id: 'rss-design-world', url: 'https://www.designworldonline.com/feed/', name: 'Design World', brand: undefined },
+  ]) {
+    try {
+      const parsed = parseGoogleNews(await fetchText(config.url, 1), config.id)
+        .filter((item) => isRelevantNews(item.title) && Date.parse(item.publishedAt) <= Date.parse(generatedAt))
+        .map((item) => ({ ...item, sourceName: config.name, sourceUrl: new URL(config.url).origin, officialBrandId: config.brand }));
+      articles.push(...parsed);
+      const recent = parsed.filter((item) => Date.parse(item.publishedAt) >= Date.parse(generatedAt) - 30 * 86400000);
+      health.push({ id: config.id, status: recent.length ? 'ok' : 'degraded', itemCount: parsed.length, checkedAt: generatedAt,
+        message: recent.length ? undefined : 'No bearing articles published in the last 30 days; older entries retain their original dates.' });
+    } catch (error) {
+      health.push({ id: config.id, status: 'failed', itemCount: 0, checkedAt: generatedAt, message: String(error) });
+    }
+  }
   articles.push(...official.items);
   health.push(...official.health);
 
@@ -474,7 +509,7 @@ async function collectNews(): Promise<{ items: FeedItem[]; health: SnapshotSourc
     if (!existing || article.officialBrandId || Date.parse(article.publishedAt) > Date.parse(existing.publishedAt)) byTitle.set(key, article);
   }
   return {
-    items: [...byTitle.values()].map(toFeedItem).sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt)).slice(0, 120),
+    items: [...byTitle.values()].map(toFeedItem).filter((item) => Date.parse(item.publishedAt) <= Date.parse(generatedAt)).sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt)).slice(0, 600),
     health,
   };
 }
@@ -814,7 +849,7 @@ async function main() {
   const feedItems = [
     ...applyFeedTranslations(news.items, translation.translations),
     ...manualWechatFeedItems(manualWechatImports),
-  ].sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt)).slice(0, 120);
+  ].sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt));
   const researchItems = applyResearchTranslations(rawResearchItems, translation.translations);
   const brands = snapshotBrands(manualWechatImports);
   const marketItems = marketFromResearch(researchItems);

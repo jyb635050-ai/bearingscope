@@ -1,4 +1,5 @@
 import { deduplicateContent } from '../../server/dedupe';
+import { rankDailySignals } from '../shared/newsRanking';
 import type {
   Brand,
   BrandAttention,
@@ -146,13 +147,13 @@ async function trending(): Promise<TrendingResponse> {
     return { brandId: brand.id, mentions: current, change7d };
   });
   return {
-    topics: items.slice(0, 5).map((item, index) => ({
+    topics: rankDailySignals(items, now).map((item, index) => ({
       rank: index + 1,
       itemId: item.id,
       title: item.title,
       mentions: 1,
       sourceCount: 1,
-      lastUpdatedAt: item.fetchedAt,
+      lastUpdatedAt: item.publishedAt,
     })),
     brandAttention,
     generatedAt: snapshot.generatedAt,
