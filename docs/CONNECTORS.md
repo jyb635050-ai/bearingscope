@@ -36,9 +36,12 @@ interface SourceAdapter {
 | 品牌官方新闻室 | 官方 RSS；无 RSS 时使用获准 API 或低频公开页面采集 | 新品、技术、产能、管理、业绩新闻稿 | 在来源名录中逐个验证地区站点、语言、条款和更新时间 |
 | 交易所/监管公告 | 官方公告 API、RSS 或公开下载 | 上市、财报、盈亏、并购、重组 | 以证券实体 ID 关联品牌，不以标题猜测公司 |
 | Google News RSS | 公开搜索 RSS | 多地区新闻发现与二次报道 | V1.1 已启用；严格机械轴承语义过滤，回链聚合原文入口，不保存全文 |
-| SKF/Timken 官方新闻页 | 低频公开页面读取 | 企业发布、财务、技术与产品新闻 | V1.1 已启用直接链接；页面结构变化会记录为来源降级 |
-| GDELT | [GDELT DOC API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) | 全球多语新闻发现与二次报道 | 当前未作为部署硬依赖；精确短语召回与速率限制不稳定，可后续补充 |
-| NewsAPI | [Everything endpoint](https://newsapi.org/docs/endpoints/everything) | 新闻搜索和补充覆盖 | 需要密钥；确认商业使用、保存期限和展示条款 |
+| 海外专业媒体 RSS | Bearing Tips、Motion Control Tips、Design World、SKF Evolution | 产品、技术、工业应用与维护 | V1.2 已启用；标题必须通过机械轴承语义门控，正文不复制 |
+| SKF/Timken 官方新闻页 | 低频公开页面读取 | 企业发布、财务、技术与产品新闻 | V1.2 已启用直接链接；页面结构变化会记录为来源降级 |
+| RBC Bearings 官方 RSS | [官方新闻 RSS](https://investor.rbcbearings.com/rss/news-releases.xml) | 财报、并购、企业与产能信息 | V1.2 已启用；按官方来源评级并保留原始发布日期 |
+| 人本集团官方新闻接口 | 官网新闻页自身使用的公开分页接口 | 人本集团、技术、制造、品牌与项目信息 | V1.2 已启用；最多取 60 条，保存官网摘要与详情链接，不保存全文 |
+| GDELT | [GDELT DOC API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) | 全球多语新闻发现与二次报道 | V1.2 已启用两组尽力查询；限流/失败不阻断主同步，结果仍过严格语义门控 |
+| NewsAPI | [Everything endpoint](https://newsapi.org/docs/endpoints/everything) | 新闻搜索和补充覆盖 | V1.2 已实现可选连接器；配置 `NEWS_API_KEY` 后启用，使用前确认套餐的商业展示和保存条款 |
 | Crossref | [Crossref REST API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/access-and-authentication/) | DOI、期刊、发布日期等权威元数据 | V1.1 无密钥学术主连接器；逐短语查询、严格标题门控并按 DOI 去重 |
 | OpenAlex | [OpenAlex API](https://developers.openalex.org/api-reference/introduction) | 作者、引用和开放获取信息 | V1.1 尽力增强源；官方建议配置免费 API Key，失败时不影响 Crossref 基础内容 |
 | 微信公众平台 | [官方接口](https://developers.weixin.qq.com/doc/offiaccount/Getting_Started/Overview.html) | 自有或明确授权公众号内容 | 仅在账号权限允许时接入，不假设官方接口可读取任意公众号历史文章 |
@@ -59,7 +62,7 @@ interface SourceAdapter {
 | JTEKT/Koyo | JTEKT 企业新闻、投资者关系、Koyo 产品品牌内容 | JTEKT 与 Koyo 使用别名映射但保留原始来源名 |
 | MinebeaMitsumi | 集团新闻、投资者关系、机械零部件业务新闻 | 同上 |
 | Nachi | 企业新闻、轴承业务产品/技术发布 | 同上 |
-| C&U | 集团官网新闻、产品/技术发布、经核验地区站 | 同上 |
+| C&U | 集团官网新闻公开接口、4 组专项新闻检索、产品/技术发布、经核验地区站 | 已核验的微信公众号文章继续走人工 URL；集团官网新闻自动更新 |
 | ZWZ | 集团官网新闻、产品/技术发布、经核验地区站 | 同上 |
 
 来源登记字段至少包含：`sourceId`、显示名称、来源类型、品牌映射、国家/地区、语言、已核验域名、入口 URL、RSS/API URL（如有）、认证/授权状态、来源等级、最后核验时间、访问条款说明和启用状态。没有验证前不臆造公众号 ID、认证状态或 RSS 地址。

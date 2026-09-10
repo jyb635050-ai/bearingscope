@@ -24,6 +24,12 @@ import {
   normalizeTitleKey,
   translateMissingTitles,
 } from './title-translation';
+import {
+  parseCuOfficialPayload,
+  parseGdeltPayload,
+  parseNewsApiPayload,
+  type ConnectorArticle,
+} from './news-connectors';
 
 const USER_AGENT = 'BearingScope/1.1 (+https://github.com/jyb635050-ai/bearingscope)';
 const generatedAt = new Date().toISOString();
@@ -99,14 +105,19 @@ function safeIsoDate(value: unknown): string | undefined {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : undefined;
 }
 
-async function fetchText(url: string, attempts = 3): Promise<string> {
+async function fetchText(url: string, attempts = 3, init: RequestInit = {}): Promise<string> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
       const response = await fetch(url, {
-        headers: { Accept: 'application/json, application/rss+xml, application/xml, text/html, text/xml;q=0.9', 'User-Agent': USER_AGENT },
+        ...init,
+        headers: {
+          Accept: 'application/json, application/rss+xml, application/xml, text/html, text/xml;q=0.9',
+          'User-Agent': USER_AGENT,
+          ...Object.fromEntries(new Headers(init.headers).entries()),
+        },
         signal: controller.signal,
       });
       if (!response.ok) {
@@ -135,20 +146,21 @@ const brandRules: Array<{ id: string; pattern: RegExp; ambiguous?: boolean }> = 
   { id: 'jtekt-koyo', pattern: /\bJTEKT\b|\bKoyo\b|捷太格特|光洋/i },
   { id: 'minebeamitsumi', pattern: /\bMinebeaMitsumi\b|美蓓亚三美/i },
   { id: 'nachi', pattern: /\bNACHI\b|不二越/i, ambiguous: true },
-  { id: 'cu', pattern: /\bC&U\b|人本轴承/i, ambiguous: true },
+  { id: 'cu', pattern: /\bC&U(?:\s+(?:Bearings?|Group|Company Limited))?\b|人本集团|人本股份|上海人本集团/i },
+  { id: 'cu', pattern: /人本轴承/i, ambiguous: true },
   { id: 'zwz', pattern: /\bZWZ\b|瓦轴/i },
 ];
 
 const bearingContext = /\b(?:ball|roller|rolling(?:[- ]element)?|wheel|motor|spindle|journal|thrust|needle|spherical|tapered|ceramic|magnetic|foil|air|wind turbine|main shaft) bearings?\b|\bbearings?\b|轴承|滚子|滚动体/i;
-const corporateSignal = /earnings|results|revenue|profit|loss|margin|shares?|stock|acqui(?:re|sition)|merger|divest|sell|sale|factory|plant|facility|production|launch|introduc|unveil|technology|innovation|partnership|joint venture|close|shutdown|restructur|appoint|data breach|财报|营收|利润|亏损|并购|收购|出售|工厂|产能|新品|技术|合作|关停|重组/i;
-const rejectNews = /obituar|funeral|dental|handpiece|fishing reel|skateboard|bottom bracket|cycling weekly|catapult|wildlife|window vandal|artist turns ball bearings|彩票|色情|牙科/i;
-const lowTrustPublishers = /openpr\.com|market research future|grand view research|claim depot|finance\.biggo\.com|bitget|ad-hoc-news\.de|scanx\.trade/i;
+const corporateSignal = /earnings|results|revenue|profit|loss|margin|shares?|stock|acqui(?:re|sition)|merger|divest|sell|sale|factory|plant|facility|production|launch|introduc|unveil|technology|innovation|partnership|joint venture|close|shutdown|restructur|appoint|ranking|award|patent|investment|expansion|contract|orders?|data breach|财报|营收|利润|亏损|并购|收购|出售|工厂|产能|新品|技术|合作|关停|重组|品牌价值|百强|榜单|专利|投建|项目|订单|签约|获评|荣获|参展|调研/i;
+const rejectNews = /obituar|funeral|dental|handpiece|fishing reel|skateboard|bottom bracket|cycling weekly|catapult|wildlife|window vandal|artist turns ball bearings|buy,? sell,? or hold|buy or sell|support and resistance|fair value|undervalued bearing stocks?|stock picks?|bull case vs bear case|zero gamma|wedge breakout|彩票|色情|牙科/i;
+const lowTrustPublishers = /openpr\.com|market research future|grand view research|claim depot|finance\.biggo\.com|bitget|ad-hoc-news\.de|scanx\.trade|vinanet\.vn|\bUnivest\b/i;
 
 function brandIdsFor(title: string): string[] {
   const hasBearingContext = bearingContext.test(title);
-  return brandRules
+  return [...new Set(brandRules
     .filter((rule) => rule.pattern.test(title) && (!rule.ambiguous || hasBearingContext))
-    .map((rule) => rule.id);
+    .map((rule) => rule.id))];
 }
 
 function isRelevantNews(title: string): boolean {
@@ -286,10 +298,45 @@ const newsFeeds: NewsFeedConfig[] = [
     id: `china-sector-${index + 1}`, query: `${query} when:90d`,
     hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans',
   })),
-  ...['bearing-news.com', 'bearingtips.com', 'designworldonline.com', 'powertransmission.com', 'bearingnet.net'].map((domain) => ({
+  ...[
+    'bearing-news.com',
+    'bearingtips.com',
+    'designworldonline.com',
+    'powertransmission.com',
+    'bearingnet.net',
+    'motioncontroltips.com',
+    'reliableplant.com',
+    'plantservices.com',
+    'machinedesign.com',
+    'oemoffhighway.com',
+    'windpowerengineering.com',
+    'railwaygazette.com',
+    'offshorewind.biz',
+    'maintworld.com',
+  ].map((domain) => ({
     id: `industry-${domain}`, query: `site:${domain} bearing when:90d`,
     hl: 'en-US', gl: 'US', ceid: 'US:en',
   })),
+  {
+    id: 'cu-global-english',
+    query: '("C&U Bearings" OR "C&U Group" OR "C&U Company Limited") (bearing OR bearings OR factory OR technology OR patent OR market) when:365d',
+    hl: 'en-US', gl: 'US', ceid: 'US:en',
+  },
+  {
+    id: 'cu-china-company',
+    query: '("人本集团" OR "人本股份" OR "人本轴承" OR "C&U人本轴承") (轴承 OR 制造 OR 技术 OR 研发 OR 项目 OR 市场 OR 上市) when:365d',
+    hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans',
+  },
+  {
+    id: 'cu-china-bearing-industry',
+    query: 'site:bearing.com.cn ("人本集团" OR "人本股份" OR "人本轴承" OR "C&U") when:365d',
+    hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans',
+  },
+  {
+    id: 'cu-official-index',
+    query: 'site:cugroup.com (轴承 OR 人本集团 OR 人本股份 OR 技术 OR 研发) when:730d',
+    hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans',
+  },
   {
     id: 'google-brands',
     query: '(SKF OR Schaeffler OR Timken OR "NSK bearings" OR "NTN Bearing" OR JTEKT OR Koyo OR MinebeaMitsumi OR "NACHI bearings" OR "C&U Bearings" OR ZWZ) (bearings OR earnings OR acquisition OR launch OR factory OR technology) when:120d',
@@ -306,21 +353,28 @@ const newsFeeds: NewsFeedConfig[] = [
     hl: 'en-US', gl: 'US', ceid: 'US:en',
   },
   {
+    id: 'google-industrial-sectors',
+    query: '("industrial bearing" OR "railway bearing" OR "aerospace bearing" OR "machine tool bearing") (launch OR order OR plant OR technology OR acquisition) when:180d',
+    hl: 'en-GB', gl: 'GB', ceid: 'GB:en',
+  },
+  {
+    id: 'google-mobility-sectors',
+    query: '("automotive bearing" OR "EV bearing" OR "electric vehicle bearing" OR "wheel bearing") (launch OR technology OR production OR supplier) when:180d',
+    hl: 'en-US', gl: 'US', ceid: 'US:en',
+  },
+  {
+    id: 'google-heavy-industry',
+    query: '("wind bearing" OR "mining bearing" OR "marine bearing" OR "steel mill bearing") (manufacturer OR project OR technology OR production) when:180d',
+    hl: 'en-IN', gl: 'IN', ceid: 'IN:en',
+  },
+  {
     id: 'google-chinese',
     query: '("SKF 轴承" OR "舍弗勒 轴承" OR "铁姆肯 轴承" OR "NSK 轴承" OR "NTN 轴承" OR "捷太格特 轴承" OR "人本轴承" OR "瓦轴") when:180d',
     hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans',
   },
 ];
 
-interface ParsedNews {
-  title: string;
-  url: string;
-  publishedAt: string;
-  sourceName: string;
-  sourceUrl?: string;
-  feedId: string;
-  officialBrandId?: string;
-}
+type ParsedNews = ConnectorArticle;
 
 const xmlParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', processEntities: true });
 
@@ -351,13 +405,16 @@ function publisherSource(article: ParsedNews): SourceRecord {
   const localizedOfficialNames: Record<string, string> = {
     'SKF official newsroom': 'SKF 官方新闻室',
     'The Timken Company': '铁姆肯公司',
+    'C&U Group official newsroom': '人本集团官网新闻资讯',
+    'RBC Bearings official newsroom': 'RBC Bearings 官方新闻室',
   };
+  const isOfficial = Boolean(article.official || officialBrand);
   return {
     id: hashId('publisher', `${article.sourceName}|${article.sourceUrl ?? ''}`),
     name: text(localizedOfficialNames[article.sourceName] ?? article.sourceName, article.sourceName),
-    type: officialBrand ? 'official' : 'rss',
-    tier: officialBrand ? 'official' : 'secondary',
-    verified: Boolean(officialBrand),
+    type: isOfficial ? 'official' : 'rss',
+    tier: isOfficial ? 'official' : 'secondary',
+    verified: isOfficial,
     brandId: officialBrand?.id,
     homepage: article.sourceUrl,
     notes: text(
@@ -372,14 +429,17 @@ function toFeedItem(article: ParsedNews): FeedItem {
   const categories = categoriesFor(article.title);
   const brands = [...new Set([...(article.officialBrandId ? [article.officialBrandId] : []), ...brandIdsFor(article.title)])];
   const isFinance = categories.some((category) => ['finance', 'listing', 'loss', 'merger', 'restructuring'].includes(category));
+  const sourceSummary = stripHtml(article.summary ?? '');
   const base = {
     id: hashId('news', article.url),
     demo: false as const,
     title: text(article.title, article.title),
     originalTitle: article.title,
     summary: text(
-      `这是真实新闻索引，来源为 ${source.name.zh}。本站只保存标题和元数据，请点击“查看原文”阅读完整报道。`,
-      `This is a real news index entry from ${article.sourceName}. BearingScope stores metadata only; open the source to read the full report.`,
+      sourceSummary || `这是真实新闻索引，来源为 ${source.name.zh}。本站只保存标题和元数据，请点击“查看原文”阅读完整报道。`,
+      /[\u3400-\u9fff]/u.test(sourceSummary)
+        ? 'Official C&U Group metadata is available in Chinese. Open the source for the complete article.'
+        : sourceSummary || `This is a real news index entry from ${article.sourceName}. BearingScope stores metadata only; open the source to read the full report.`,
     ),
     keyFacts: [
       text(`发布来源：${source.name.zh}`, `Publisher: ${article.sourceName}`),
@@ -418,6 +478,7 @@ function parseSkfOfficial(html: string): ParsedNews[] {
       sourceUrl: 'https://news.cision.com/skf',
       feedId: 'official-skf',
       officialBrandId: 'skf',
+      official: true,
     });
   }
   return items.slice(0, 24);
@@ -438,6 +499,7 @@ function parseTimkenOfficial(html: string): ParsedNews[] {
       sourceUrl: 'https://investors.timken.com/financial-news/press-releases/default.aspx',
       feedId: 'official-timken',
       officialBrandId: 'timken',
+      official: true,
     });
   }
   return items.slice(0, 24);
@@ -459,7 +521,95 @@ async function collectOfficialNews(): Promise<{ items: ParsedNews[]; health: Sna
       health.push({ id: config.id, status: 'failed', itemCount: 0, checkedAt: generatedAt, message: error instanceof Error ? error.message : String(error) });
     }
   }
+  try {
+    const payload = JSON.parse(await fetchText('https://www.cugroup.com/About/newsbypage', 2, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', Accept: 'application/json' },
+      body: new URLSearchParams({ pageIndex: '1', pageSize: '60' }),
+    })) as unknown;
+    const parsed = parseCuOfficialPayload(payload)
+      .filter((item) => Date.parse(item.publishedAt) <= Date.parse(generatedAt));
+    items.push(...parsed);
+    health.push({
+      id: 'official-cu',
+      status: parsed.length ? 'ok' : 'degraded',
+      itemCount: parsed.length,
+      checkedAt: generatedAt,
+      message: parsed.length ? undefined : 'C&U official newsroom API returned no valid company or bearing entries.',
+    });
+  } catch (error) {
+    health.push({ id: 'official-cu', status: 'failed', itemCount: 0, checkedAt: generatedAt, message: error instanceof Error ? error.message : String(error) });
+  }
   return { items, health };
+}
+
+async function collectGdeltNews(): Promise<{ items: ParsedNews[]; health: SnapshotSourceHealth[] }> {
+  const configs = [
+    {
+      id: 'gdelt-global-bearing',
+      query: '(SKF OR Schaeffler OR Timken OR "NSK bearings" OR "NTN bearings" OR JTEKT OR Koyo OR MinebeaMitsumi OR "NACHI bearings" OR "C&U Bearings" OR ZWZ) bearing',
+    },
+    {
+      id: 'gdelt-cu-focus',
+      query: '("C&U Bearings" OR "C&U Group" OR "C&U Company Limited")',
+    },
+  ];
+  const items: ParsedNews[] = [];
+  const health: SnapshotSourceHealth[] = [];
+  for (const config of configs) {
+    const url = new URL('https://api.gdeltproject.org/api/v2/doc/doc');
+    url.searchParams.set('query', config.query);
+    url.searchParams.set('mode', 'ArtList');
+    url.searchParams.set('maxrecords', '250');
+    url.searchParams.set('timespan', '3months');
+    url.searchParams.set('sort', 'DateDesc');
+    url.searchParams.set('format', 'json');
+    try {
+      const parsed = parseGdeltPayload(JSON.parse(await fetchText(url.toString(), 1)) as unknown, config.id)
+        .filter((item) => isRelevantNews(item.title) && !lowTrustPublishers.test(item.sourceName));
+      items.push(...parsed);
+      health.push({ id: config.id, status: parsed.length ? 'ok' : 'degraded', itemCount: parsed.length, checkedAt: generatedAt, message: parsed.length ? undefined : 'GDELT returned no strictly relevant entries.' });
+    } catch (error) {
+      health.push({ id: config.id, status: 'failed', itemCount: 0, checkedAt: generatedAt, message: error instanceof Error ? error.message : String(error) });
+    }
+    await wait(800);
+  }
+  return { items, health };
+}
+
+async function collectNewsApi(): Promise<{ items: ParsedNews[]; health: SnapshotSourceHealth }> {
+  const apiKey = process.env.NEWS_API_KEY?.trim();
+  if (!apiKey) {
+    return {
+      items: [],
+      health: {
+        id: 'newsapi-everything', status: 'degraded', itemCount: 0, checkedAt: generatedAt,
+        message: 'NEWS_API_KEY is not configured; the optional NewsAPI connector is disabled.',
+      },
+    };
+  }
+  const url = new URL('https://newsapi.org/v2/everything');
+  url.searchParams.set('q', '("bearing manufacturer" OR "bearing industry" OR "C&U Bearings" OR SKF OR Schaeffler OR Timken OR NSK OR NTN OR JTEKT)');
+  url.searchParams.set('searchIn', 'title,description');
+  url.searchParams.set('language', 'en');
+  url.searchParams.set('sortBy', 'publishedAt');
+  url.searchParams.set('pageSize', '100');
+  url.searchParams.set('from', new Date(Date.parse(generatedAt) - 30 * 86400000).toISOString());
+  try {
+    const parsed = parseNewsApiPayload(JSON.parse(await fetchText(url.toString(), 2, {
+      headers: { 'X-Api-Key': apiKey },
+    })) as unknown, 'newsapi-everything')
+      .filter((item) => isRelevantNews(item.title) && !lowTrustPublishers.test(item.sourceName));
+    return {
+      items: parsed,
+      health: { id: 'newsapi-everything', status: parsed.length ? 'ok' : 'degraded', itemCount: parsed.length, checkedAt: generatedAt, message: parsed.length ? undefined : 'NewsAPI returned no strictly relevant entries.' },
+    };
+  } catch (error) {
+    return {
+      items: [],
+      health: { id: 'newsapi-everything', status: 'failed', itemCount: 0, checkedAt: generatedAt, message: error instanceof Error ? error.message : String(error) },
+    };
+  }
 }
 
 async function collectNews(): Promise<{ items: FeedItem[]; health: SnapshotSourceHealth[] }> {
@@ -484,13 +634,16 @@ async function collectNews(): Promise<{ items: FeedItem[]; health: SnapshotSourc
 
   const official = await collectOfficialNews();
   for (const config of [
-    { id: 'rss-skf-evolution', url: 'https://evolution.skf.com/feed/', name: 'SKF Evolution', brand: 'skf' },
-    { id: 'rss-design-world', url: 'https://www.designworldonline.com/feed/', name: 'Design World', brand: undefined },
+    { id: 'rss-skf-evolution', url: 'https://evolution.skf.com/feed/', homepage: 'https://evolution.skf.com/', name: 'SKF Evolution', brand: 'skf', official: true },
+    { id: 'rss-design-world', url: 'https://www.designworldonline.com/feed/', homepage: 'https://www.designworldonline.com/', name: 'Design World', brand: undefined, official: false },
+    { id: 'rss-bearing-tips', url: 'https://www.bearingtips.com/feed/', homepage: 'https://www.bearingtips.com/', name: 'Bearing Tips', brand: undefined, official: false },
+    { id: 'rss-motion-control-tips', url: 'https://feeds.feedburner.com/MotionControlTips', homepage: 'https://www.motioncontroltips.com/', name: 'Motion Control Tips', brand: undefined, official: false },
+    { id: 'rss-rbc-bearings', url: 'https://investor.rbcbearings.com/rss/news-releases.xml', homepage: 'https://investor.rbcbearings.com/newsroom', name: 'RBC Bearings official newsroom', brand: undefined, official: true },
   ]) {
     try {
       const parsed = parseGoogleNews(await fetchText(config.url, 1), config.id)
         .filter((item) => isRelevantNews(item.title) && Date.parse(item.publishedAt) <= Date.parse(generatedAt))
-        .map((item) => ({ ...item, sourceName: config.name, sourceUrl: new URL(config.url).origin, officialBrandId: config.brand }));
+        .map((item) => ({ ...item, sourceName: config.name, sourceUrl: config.homepage, officialBrandId: config.brand, official: config.official }));
       articles.push(...parsed);
       const recent = parsed.filter((item) => Date.parse(item.publishedAt) >= Date.parse(generatedAt) - 30 * 86400000);
       health.push({ id: config.id, status: recent.length ? 'ok' : 'degraded', itemCount: parsed.length, checkedAt: generatedAt,
@@ -501,6 +654,9 @@ async function collectNews(): Promise<{ items: FeedItem[]; health: SnapshotSourc
   }
   articles.push(...official.items);
   health.push(...official.health);
+  const [gdelt, newsApi] = await Promise.all([collectGdeltNews(), collectNewsApi()]);
+  articles.push(...gdelt.items, ...newsApi.items);
+  health.push(...gdelt.health, newsApi.health);
 
   const byTitle = new Map<string, ParsedNews>();
   for (const article of articles) {
@@ -789,6 +945,10 @@ function uniqueSources(feed: FeedItem[], research: ResearchItem[], brands: Brand
 
 function validateSnapshot(snapshot: LiveContentSnapshot): void {
   if (snapshot.feedItems.length < 15) throw new Error(`Refusing deployment: only ${snapshot.feedItems.length} real news items were collected (minimum 15).`);
+  const cuOfficialItems = snapshot.feedItems.filter((item) => item.source.type === 'official' && item.source.brandId === 'cu');
+  if (cuOfficialItems.length < 10) {
+    throw new Error(`Refusing deployment: only ${cuOfficialItems.length} official C&U newsroom items were collected (minimum 10).`);
+  }
   if (snapshot.researchItems.length < 12) throw new Error(`Refusing deployment: only ${snapshot.researchItems.length} real papers were collected (minimum 12).`);
   const allItems = [...snapshot.feedItems, ...snapshot.marketItems, ...snapshot.researchItems];
   const demos = allItems.filter((item) => item.demo);

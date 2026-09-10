@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 */3 * * *'
 
 permissions:
   contents: read
@@ -41,6 +41,7 @@ jobs:
         run: pnpm sync:content
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
 
       - name: Test
         run: pnpm test
