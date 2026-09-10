@@ -26,6 +26,9 @@ export interface BrandScaleRecord {
   caveat: LocalizedText;
 }
 
+export const salesRankingYears = [2025, 2024, 2023] as const;
+export type SalesRankingYear = (typeof salesRankingYears)[number];
+
 export interface VolumeDisclosure {
   brand: string;
   value: LocalizedText;

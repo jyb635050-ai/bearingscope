@@ -2103,6 +2103,60 @@ select:focus {
   font-size: 10px;
   text-align: right;
 }
+.ranking-year-control {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.ranking-year-control > span,
+.ranking-year-control > small {
+  color: var(--text-faint);
+  font-size: 9px;
+  letter-spacing: .04em;
+}
+
+.ranking-year-switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+}
+
+.ranking-year-switch button {
+  min-width: 58px;
+  min-height: 30px;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius-xs) - 2px);
+  cursor: pointer;
+  font-family: "Roboto Mono", "Cascadia Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  transition: color .16s ease, background .16s ease, border-color .16s ease;
+}
+
+.ranking-year-switch button:hover {
+  color: var(--text-strong);
+  background: var(--surface-3);
+}
+
+.ranking-year-switch button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.ranking-year-switch button.is-active {
+  color: var(--cyan-strong);
+  background: var(--cyan-soft);
+  border-color: oklch(from var(--cyan) l c h / .5);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+
 
 .ranking-eyebrow {
   color: var(--brass);
@@ -2794,6 +2848,11 @@ select:focus {
   .unit-context { grid-template-columns: 1fr; gap: 4px; margin: 12px; }
   .volume-grid { grid-template-columns: 1fr; padding: 0 12px 12px; }
   .ranking-empty-evidence { margin: 0 12px 12px; }
+  .ranking-year-control { justify-items: start; }
+  .ranking-year-switch { width: 100%; }
+  .ranking-year-switch button { min-width: 0; flex: 1 1 0; }
+  .ranking-panel__header:has(.ranking-year-control) { align-items: stretch; flex-direction: column; }
+  .ranking-panel__header:has(.ranking-year-control) > div:first-child { margin-bottom: 2px; }
   .trend-layout { padding: 12px; }
   .trend-chart-card { overflow-x: auto; }
   .trend-summaries { grid-template-columns: 1fr; }
@@ -2816,6 +2875,10 @@ select:focus {
   .category-card > footer { align-items: flex-start; flex-direction: column; }
   .category-card > footer > div { align-items: flex-start; }
   .source-register li { grid-template-columns: 1fr; }
+  .ranking-year-control { margin-top: 10px; }
+  .ranking-year-switch button { min-height: 36px; }
+  .ranking-year-control > span,
+  .ranking-year-control > small { font-size: 9px; }
   .source-register li > .ranking-source-link { grid-column: auto; }
 }
 

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 const qaOutput = (name: string) => path.resolve(process.cwd(), '../../work', name);
 
+test.setTimeout(60_000);
 test('desktop product workflow and seven routes', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Desktop-only product workflow');
 
@@ -52,6 +53,18 @@ test('desktop product workflow and seven routes', async ({ page }, testInfo) => 
 
   await page.goto('/sales-rankings');
   await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
+  await expect(page.getByRole('button', { name: '2025', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: '2025 公开口径规模序位', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '2024', exact: true }).click();
+  await expect(page).toHaveURL(/year=2024/);
+  await expect(page.getByRole('heading', { name: '2024 公开口径规模序位', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '2023', exact: true }).click();
+  await expect(page).toHaveURL(/year=2023/);
+  await expect(page.getByRole('heading', { name: '2023 公开口径规模序位', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: '2023', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
+  await page.getByRole('button', { name: '2025', exact: true }).click();
   await page.screenshot({ path: qaOutput('bearingscope-sales-desktop.png'), fullPage: false });
   await page.getByRole('button', { name: '件数披露', exact: true }).click();
   await expect(page.locator('.volume-card')).toHaveCount(2);
@@ -87,6 +100,10 @@ test('mobile drawer, layout and theme controls', async ({ page }, testInfo) => {
   await page.getByRole('button', { name: '打开导航', exact: true }).click();
   await page.locator('.mobile-drawer').getByRole('link', { name: '全球销量榜', exact: true }).click();
   await expect(page.getByRole('heading', { name: '全球轴承销量榜', exact: true })).toBeVisible();
+  await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
+  await expect(page.getByRole('button', { name: '2025', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '2024', exact: true }).click();
+  await expect(page).toHaveURL(/year=2024/);
   await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.getByRole('button', { name: '细分品类', exact: true }).click();

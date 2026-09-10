@@ -1,20 +1,33 @@
 import { describe, expect, it } from 'vitest';
+import { annualSalesSources, createAnnualRankings } from '../src/data/annualSalesRankings';
 import {
   brandScaleRanking,
   categoryFindings,
+  salesRankingYears,
   salesSources,
   trendSeries,
   volumeDisclosures,
 } from '../src/data/salesRankings';
 
+const brandScaleRankings = createAnnualRankings(brandScaleRanking);
+
 describe('sales ranking research snapshot', () => {
   it('keeps ten ranked brands ordered by the disclosed-scope USD approximation', () => {
-    expect(brandScaleRanking).toHaveLength(10);
-    expect(brandScaleRanking.map((item) => item.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-
-    for (let index = 1; index < brandScaleRanking.length; index += 1) {
-      expect(brandScaleRanking[index - 1].approxUsdBn).toBeGreaterThanOrEqual(brandScaleRanking[index].approxUsdBn);
+    expect(salesRankingYears).toEqual([2025, 2024, 2023]);
+    for (const year of salesRankingYears) {
+      const ranking = brandScaleRankings[year];
+      expect(ranking).toHaveLength(10);
+      expect(ranking.map((item) => item.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      for (let index = 1; index < ranking.length; index += 1) {
+        expect(ranking[index - 1].approxUsdBn).toBeGreaterThanOrEqual(ranking[index].approxUsdBn);
+      }
     }
+  });
+
+  it('keeps each year distinct and reflects the 2025 NTN/JTEKT order change', () => {
+    expect(brandScaleRankings[2025][4].brand).toBe('NTN');
+    expect(brandScaleRankings[2025][5].brand).toBe('JTEKT / Koyo');
+    expect(brandScaleRankings[2023][0].reported.zh).not.toBe(brandScaleRankings[2025][0].reported.zh);
   });
 
   it('does not invent unit volumes for brands without explicit disclosures', () => {
@@ -37,8 +50,10 @@ describe('sales ranking research snapshot', () => {
   });
 
   it('resolves every source reference to a primary-source register entry', () => {
-    const sourceIds = new Set(salesSources.map((source) => source.id));
+    const allSources = [...salesSources, ...annualSalesSources];
+    const sourceIds = new Set(allSources.map((source) => source.id));
     const referencedIds = [
+      ...salesRankingYears.flatMap((year) => brandScaleRankings[year].flatMap((item) => item.sourceIds)),
       ...brandScaleRanking.flatMap((item) => item.sourceIds),
       ...volumeDisclosures.flatMap((item) => item.sourceIds),
       ...trendSeries.flatMap((item) => item.sourceIds),
@@ -46,6 +61,6 @@ describe('sales ranking research snapshot', () => {
     ];
 
     expect(referencedIds.every((id) => sourceIds.has(id))).toBe(true);
-    expect(salesSources.every((source) => source.url.startsWith('https://'))).toBe(true);
+    expect(allSources.every((source) => source.url.startsWith('https://'))).toBe(true);
   });
 });

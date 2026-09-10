@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3,
   Boxes,
@@ -13,18 +14,24 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { PageHeader } from '../components/content';
+import { annualSalesSources, createAnnualRankings } from '../data/annualSalesRankings';
 import {
-  brandScaleRanking,
+  brandScaleRanking as brandScaleRanking2024,
   categoryFindings,
   fxAssumptions,
   salesRankingVerifiedAt,
+  salesRankingYears,
   salesSources,
   trendSeries,
   volumeDisclosures,
   type EvidenceLevel,
+  type SalesRankingYear,
 } from '../data/salesRankings';
 import { localize, type Language } from '../lib/i18n';
 import type { PageLanguageProps } from './HomePage';
+
+const brandScaleRankings = createAnnualRankings(brandScaleRanking2024);
+const allSalesSources = [...salesSources, ...annualSalesSources];
 
 type RankingView = 'scale' | 'volume' | 'trend' | 'categories' | 'method';
 
@@ -85,10 +92,24 @@ function formatSourceDate(value: string, language: Language) {
   return new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(value));
 }
 
+function isSalesRankingYear(value: number): value is SalesRankingYear {
+  return salesRankingYears.some((year) => year === value);
+}
+
 export function SalesRankingsPage({ language }: PageLanguageProps) {
   const [view, setView] = useState<RankingView>('scale');
-  const sourceMap = useMemo(() => new Map(salesSources.map((source) => [source.id, source])), []);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedYear = Number(searchParams.get('year'));
+  const selectedYear: SalesRankingYear = isSalesRankingYear(requestedYear) ? requestedYear : 2025;
+  const brandScaleRanking = brandScaleRankings[selectedYear];
+  const sourceMap = useMemo(() => new Map(allSalesSources.map((source) => [source.id, source])), []);
   const maxScale = brandScaleRanking[0]?.approxUsdBn ?? 1;
+
+  const selectYear = (year: SalesRankingYear) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('year', String(year));
+    setSearchParams(next, { replace: true });
+  };
 
   const sourceLink = (sourceId: string, compact = false) => {
     const source = sourceMap.get(sourceId);
@@ -110,7 +131,7 @@ export function SalesRankingsPage({ language }: PageLanguageProps) {
           zh: '以年报、交易所文件和企业原始披露，重建近十年销售规模与细分品类竞争格局。',
           en: 'Reconstruct ten-year sales scale and category competition from annual reports, exchange filings and first-party disclosures.',
         }}
-        meta={<span><ShieldCheck aria-hidden="true" />{language === 'zh' ? '10 家品牌 · 2015—2024 · 每项可追溯' : '10 brands · 2015–2024 · source-auditable'}</span>}
+        meta={<span><ShieldCheck aria-hidden="true" />{language === 'zh' ? '10 家品牌 · 2023—2025 年度榜 · 每项可追溯' : '10 brands · 2023–2025 annual tables · source-auditable'}</span>}
       />
 
       <section className="ranking-disclosure" aria-label={language === 'zh' ? '统计口径说明' : 'Methodology disclosure'}>
@@ -118,14 +139,14 @@ export function SalesRankingsPage({ language }: PageLanguageProps) {
         <div>
           <strong>{language === 'zh' ? '先看口径：主榜不是全球出货件数榜' : 'Read the basis first: the main table is not a global unit-shipment ranking'}</strong>
           <p>{language === 'zh'
-            ? '全球企业没有统一强制披露轴承件数。主榜把最近完整年度的“轴承相关公开销售口径”按统一汇率近似换算，只表示公开口径的规模序位，不等于市场份额。件数榜仅收录企业明确披露的数据。'
-            : 'There is no uniform mandatory disclosure of bearing units. The main table converts each company’s latest complete public bearing-related sales scope using one FX basis. It is a public-scope scale ordering, not market share. The unit section only includes explicit disclosures.'}</p>
+            ? '全球企业没有统一强制披露轴承件数。主榜把所选年度的“轴承相关公开销售口径”按同一换算基准估算，只表示公开口径的规模序位，不等于市场份额。件数榜仅收录企业明确披露的数据。'
+            : 'There is no uniform mandatory disclosure of bearing units. The main table converts the selected year’s public bearing-related sales scope using one comparison FX basis. It is a public-scope scale ordering, not market share. The unit section only includes explicit disclosures.'}</p>
         </div>
       </section>
 
       <section className="ranking-kpis" aria-label={language === 'zh' ? '研究覆盖摘要' : 'Research coverage summary'}>
         <article><Database aria-hidden="true" /><div><strong>10</strong><span>{language === 'zh' ? '家重点品牌' : 'tracked brands'}</span></div></article>
-        <article><FileCheck2 aria-hidden="true" /><div><strong>14</strong><span>{language === 'zh' ? '条原始信源' : 'primary sources'}</span></div></article>
+        <article><FileCheck2 aria-hidden="true" /><div><strong>{allSalesSources.length}</strong><span>{language === 'zh' ? '条原始信源' : 'primary sources'}</span></div></article>
         <article><TrendingUp aria-hidden="true" /><div><strong>10</strong><span>{language === 'zh' ? '年连续窗口' : 'year window'}</span></div></article>
         <article><Factory aria-hidden="true" /><div><strong>2</strong><span>{language === 'zh' ? '项直接件数披露' : 'direct unit disclosures'}</span></div></article>
       </section>
@@ -141,8 +162,18 @@ export function SalesRankingsPage({ language }: PageLanguageProps) {
       {view === 'scale' && (
         <section className="ranking-panel" aria-labelledby="scale-ranking-title">
           <header className="ranking-panel__header">
-            <div><span className="ranking-eyebrow">{language === 'zh' ? '01 / 规模' : '01 / SCALE'}</span><h2 id="scale-ranking-title">{language === 'zh' ? '2024 公开口径规模序位' : '2024 public-scope scale ordering'}</h2></div>
-            <p>{language === 'zh' ? '统一换算为十亿美元，仅供量级比较' : 'Converted to USD billions for scale comparison only'}</p>
+            <div><span className="ranking-eyebrow">{language === 'zh' ? '01 / 规模' : '01 / SCALE'}</span><h2 id="scale-ranking-title">{language === 'zh' ? `${selectedYear} 公开口径规模序位` : `${selectedYear} public-scope scale ordering`}</h2></div>
+            <div className="ranking-year-control">
+              <span>{language === 'zh' ? '选择榜单年度' : 'Ranking year'}</span>
+              <div className="ranking-year-switch" role="group" aria-label={language === 'zh' ? '选择销量榜年度' : 'Select sales ranking year'}>
+                {salesRankingYears.map((year) => (
+                  <button key={year} type="button" className={selectedYear === year ? 'is-active' : ''} aria-pressed={selectedYear === year} onClick={() => selectYear(year)}>
+                    {year}
+                  </button>
+                ))}
+              </div>
+              <small>{language === 'zh' ? '同一汇率基准 · 可跨年切换' : 'Constant FX basis · year switchable'}</small>
+            </div>
           </header>
 
           <div className="ranking-table-wrap">
@@ -187,8 +218,8 @@ export function SalesRankingsPage({ language }: PageLanguageProps) {
           <footer className="ranking-panel__note">
             <Calculator aria-hidden="true" />
             <span>{language === 'zh'
-              ? `换算假设：1 美元 = ${fxAssumptions.SEK} 瑞典克朗 / ${fxAssumptions.EUR} 欧元 / ${fxAssumptions.JPY} 日元 / ${fxAssumptions.CNY} 人民币。汇率为四舍五入的研究假设，约 ±5% 变动不会改变前四名序位，但可能影响第 5—6 名。`
-              : `FX assumptions: USD 1 = SEK ${fxAssumptions.SEK} / EUR ${fxAssumptions.EUR} / JPY ${fxAssumptions.JPY} / CNY ${fxAssumptions.CNY}. Rounded research assumptions; ±5% does not change the top four but may affect positions 5–6.`}</span>
+              ? `三年统一换算基准：1 美元 = ${fxAssumptions.SEK} 瑞典克朗 / ${fxAssumptions.EUR} 欧元 / ${fxAssumptions.JPY} 日元 / ${fxAssumptions.CNY} 人民币。这样可观察公开经营规模变化，不把历史汇率波动误当作销量变化；第 5—6 名对汇率和业务口径较敏感。`
+              : `Constant three-year comparison basis: USD 1 = SEK ${fxAssumptions.SEK} / EUR ${fxAssumptions.EUR} / JPY ${fxAssumptions.JPY} / CNY ${fxAssumptions.CNY}. This separates disclosed operating scale from historical FX noise; positions 5–6 remain sensitive to FX and scope.`}</span>
           </footer>
         </section>
       )}
@@ -330,9 +361,9 @@ export function SalesRankingsPage({ language }: PageLanguageProps) {
           </div>
 
           <div className="source-register">
-            <header><h3>{language === 'zh' ? '原始信源登记表' : 'Primary-source register'}</h3><span>{salesSources.length} {language === 'zh' ? '项' : 'items'}</span></header>
+            <header><h3>{language === 'zh' ? '原始信源登记表' : 'Primary-source register'}</h3><span>{allSalesSources.length} {language === 'zh' ? '项' : 'items'}</span></header>
             <ol>
-              {salesSources.map((source) => (
+              {allSalesSources.map((source) => (
                 <li key={source.id}>
                   <span className={`source-tier source-tier--${source.evidence}`}>{evidenceLabels[source.evidence][language]}</span>
                   <div><strong>{source.publisher}</strong><span>{localize(source.supports, language)}</span></div>
