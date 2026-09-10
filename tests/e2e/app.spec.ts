@@ -3,13 +3,13 @@ import path from 'node:path';
 
 const qaOutput = (name: string) => path.resolve(process.cwd(), '../../work', name);
 
-test('desktop product workflow and six routes', async ({ page }, testInfo) => {
+test('desktop product workflow and seven routes', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Desktop-only product workflow');
 
   await page.goto('/');
   await expect(page).toHaveTitle(/BearingScope/);
   await expect(page.getByRole('heading', { name: '全球轴承情报', exact: true })).toBeVisible();
-  await expect(page.locator('.primary-nav__item')).toHaveCount(6);
+  await expect(page.locator('.primary-nav__item')).toHaveCount(7);
   await expect(page.locator('.trending-list li')).toHaveCount(5);
   await expect(page.locator('.content-card').first()).toBeVisible();
   await expect(page.locator('html')).not.toHaveClass(/light/);
@@ -41,6 +41,7 @@ test('desktop product workflow and six routes', async ({ page }, testInfo) => {
     ['/market', '市场未来'],
     ['/research', '论文研究'],
     ['/saved', '收藏'],
+    ['/sales-rankings', '全球轴承销量榜'],
   ];
   for (const [route, title] of routes) {
     await page.goto(route);
@@ -48,6 +49,15 @@ test('desktop product workflow and six routes', async ({ page }, testInfo) => {
     await expect(page.locator('.async-state--error')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   }
+
+  await page.goto('/sales-rankings');
+  await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
+  await page.screenshot({ path: qaOutput('bearingscope-sales-desktop.png'), fullPage: false });
+  await page.getByRole('button', { name: '件数披露', exact: true }).click();
+  await expect(page.locator('.volume-card')).toHaveCount(2);
+  await page.getByRole('button', { name: '细分品类', exact: true }).click();
+  await expect(page.locator('.category-card')).toHaveCount(6);
+  await expect(page.getByText('暂不能给出可信的全球第一名', { exact: true })).toBeVisible();
 
   await page.goto('/');
   await expect(page.locator('.trending-list li')).toHaveCount(5);
@@ -73,4 +83,13 @@ test('mobile drawer, layout and theme controls', async ({ page }, testInfo) => {
   await expect(page.locator('.mobile-drawer')).toHaveCount(0);
 
   await page.screenshot({ path: qaOutput('bearingscope-mobile.png'), fullPage: false });
+
+  await page.getByRole('button', { name: '打开导航', exact: true }).click();
+  await page.locator('.mobile-drawer').getByRole('link', { name: '全球销量榜', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '全球轴承销量榜', exact: true })).toBeVisible();
+  await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.getByRole('button', { name: '细分品类', exact: true }).click();
+  await expect(page.locator('.category-card')).toHaveCount(6);
+  await page.screenshot({ path: qaOutput('bearingscope-sales-mobile.png'), fullPage: false });
 });

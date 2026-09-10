@@ -12,6 +12,7 @@ const resources = {
         market: '市场未来',
         research: '论文研究',
         saved: '收藏',
+        salesRankings: '全球销量榜',
       },
       topbar: {
         search: '搜索品牌、技术、论文或事件',
@@ -40,6 +41,7 @@ const resources = {
         market: 'Market outlook',
         research: 'Research',
         saved: 'Saved',
+        salesRankings: 'Global sales',
       },
       topbar: {
         search: 'Search brands, technology, papers or events',

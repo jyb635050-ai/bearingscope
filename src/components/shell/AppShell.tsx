@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
+  BarChart3,
   Bookmark,
   Building2,
   FileText,
@@ -35,6 +36,7 @@ const navItems = [
   { to: '/market', key: 'market', icon: TrendingUp },
   { to: '/research', key: 'research', icon: FileText },
   { to: '/saved', key: 'saved', icon: Bookmark },
+  { to: '/sales-rankings', key: 'salesRankings', icon: BarChart3 },
 ] as const;
 
 export function AppShell({ children, language, theme, onLanguageChange, onThemeToggle }: AppShellProps) {
