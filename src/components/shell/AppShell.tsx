@@ -4,6 +4,7 @@ import {
   Bookmark,
   Building2,
   FileText,
+  Globe2,
   Languages,
   ListFilter,
   Menu,
@@ -37,6 +38,7 @@ const navItems = [
   { to: '/research', key: 'research', icon: FileText },
   { to: '/saved', key: 'saved', icon: Bookmark },
   { to: '/sales-rankings', key: 'salesRankings', icon: BarChart3 },
+  { to: '/brand-websites', key: 'brandWebsites', icon: Globe2 },
 ] as const;
 
 export function AppShell({ children, language, theme, onLanguageChange, onThemeToggle }: AppShellProps) {

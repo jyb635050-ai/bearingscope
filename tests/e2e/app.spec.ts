@@ -4,13 +4,13 @@ import path from 'node:path';
 const qaOutput = (name: string) => path.resolve(process.cwd(), '../../work', name);
 
 test.setTimeout(60_000);
-test('desktop product workflow and seven routes', async ({ page }, testInfo) => {
+test('desktop product workflow and eight routes', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Desktop-only product workflow');
 
   await page.goto('/');
   await expect(page).toHaveTitle(/BearingScope/);
   await expect(page.getByRole('heading', { name: '全球轴承情报', exact: true })).toBeVisible();
-  await expect(page.locator('.primary-nav__item')).toHaveCount(7);
+  await expect(page.locator('.primary-nav__item')).toHaveCount(8);
   await expect(page.locator('.trending-list li')).toHaveCount(5);
   await expect(page.locator('.content-card').first()).toBeVisible();
   await expect(page.locator('html')).not.toHaveClass(/light/);
@@ -43,6 +43,7 @@ test('desktop product workflow and seven routes', async ({ page }, testInfo) => 
     ['/research', '论文研究'],
     ['/saved', '收藏'],
     ['/sales-rankings', '全球轴承销量榜'],
+    ['/brand-websites', '品牌官网直达'],
   ];
   for (const [route, title] of routes) {
     await page.goto(route);
@@ -50,6 +51,13 @@ test('desktop product workflow and seven routes', async ({ page }, testInfo) => 
     await expect(page.locator('.async-state--error')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   }
+  await page.goto('/brand-websites');
+  await expect(page.locator('.brand-site-card')).toHaveCount(31);
+  await expect(page.getByRole('link', { name: /打开人本轴承官网/ })).toHaveAttribute('href', 'https://www.cugroup.com/');
+  await page.getByRole('button', { name: '中国', exact: true }).click();
+  await expect(page.getByText('显示 7 个品牌', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
 
   await page.goto('/sales-rankings');
   await expect(page.locator('.ranking-table tbody tr')).toHaveCount(10);
@@ -92,6 +100,7 @@ test('mobile drawer, layout and theme controls', async ({ page }, testInfo) => {
   await page.getByRole('button', { name: '打开导航', exact: true }).click();
   await expect(page.locator('.mobile-drawer')).toBeVisible();
   await expect(page.locator('.mobile-drawer').getByRole('link', { name: '品牌雷达', exact: true })).toBeVisible();
+  await expect(page.locator('.mobile-drawer').getByRole('link', { name: '品牌官网', exact: true })).toBeVisible();
   await page.locator('.mobile-drawer__close').click();
   await expect(page.locator('.mobile-drawer')).toHaveCount(0);
 

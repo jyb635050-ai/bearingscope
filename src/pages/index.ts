@@ -1,4 +1,5 @@
 export * from './BrandsPage';
+export * from './BrandWebsitesPage';
 export * from './HomePage';
 export * from './MarketPage';
 export * from './NewsPage';

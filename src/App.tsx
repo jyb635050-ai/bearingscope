@@ -4,7 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/shell/AppShell';
 import { useTheme } from './hooks/usePreferences';
 import type { Language } from './lib/i18n';
-import { BrandsPage, HomePage, MarketPage, NewsPage, ResearchPage, SalesRankingsPage, SavedPage } from './pages';
+import { BrandsPage, BrandWebsitesPage, HomePage, MarketPage, NewsPage, ResearchPage, SalesRankingsPage, SavedPage } from './pages';
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -30,6 +30,7 @@ export default function App() {
         <Route path="/research" element={<ResearchPage language={language} />} />
         <Route path="/saved" element={<SavedPage language={language} />} />
         <Route path="/sales-rankings" element={<SalesRankingsPage language={language} />} />
+        <Route path="/brand-websites" element={<BrandWebsitesPage language={language} />} />
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
     </AppShell>
