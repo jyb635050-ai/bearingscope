@@ -221,6 +221,7 @@ export function createApp() {
       rank: index + 1,
       itemId: item.id,
       title: item.title,
+      url: item.url ?? item.canonicalUrl,
       mentions: 20 - index * 3,
       sourceCount: Math.max(2, 6 - index),
       lastUpdatedAt: item.fetchedAt,

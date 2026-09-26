@@ -70,6 +70,7 @@ describe('BearingScope API contracts', () => {
     ]);
 
     expect(trending.body.topics).toHaveLength(5);
+    expect(trending.body.topics[0].url).toMatch(/^https?:\/\//);
     expect(trending.body.brandAttention).toHaveLength(10);
     expect(brandResponse.body.items).toHaveLength(10);
     expect(brandResponse.body.disclaimer.zh).toContain('关注名单');

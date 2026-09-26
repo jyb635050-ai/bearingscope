@@ -151,6 +151,7 @@ async function trending(): Promise<TrendingResponse> {
       rank: index + 1,
       itemId: item.id,
       title: item.title,
+      url: item.url ?? item.canonicalUrl,
       mentions: 1,
       sourceCount: 1,
       lastUpdatedAt: item.publishedAt,

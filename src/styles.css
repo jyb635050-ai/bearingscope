@@ -893,8 +893,9 @@ p {
 .trending-list li:nth-child(2) .trending-list__rank { color: var(--cyan-strong); }
 .trending-list li:nth-child(3) .trending-list__rank { color: var(--text); }
 
-.trending-list button {
+.trending-list__action {
   display: flex;
+  width: 100%;
   min-width: 0;
   align-items: center;
   justify-content: space-between;
@@ -904,10 +905,20 @@ p {
   background: transparent;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
 }
 
-.trending-list button:disabled {
+.trending-list__action:disabled {
   cursor: default;
+}
+
+.trending-list__action:hover strong {
+  color: var(--cyan-strong);
+}
+
+.trending-list__action:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
 }
 
 .trending-list strong {
@@ -918,7 +929,7 @@ p {
   white-space: nowrap;
 }
 
-.trending-list button > span {
+.trending-list__action > span {
   flex: 0 0 auto;
   color: var(--text-faint);
   font-size: 11px;
@@ -1905,9 +1916,9 @@ select:focus {
   .page-header__actions { display: none; }
   .page > .demo-notice { align-items: flex-start; }
   .trending-panel { margin-inline: -14px; padding-inline: 14px; }
-  .trending-list button { display: block; }
+  .trending-list__action { display: block; }
   .trending-list strong { display: block; white-space: normal; }
-  .trending-list button > span { display: block; margin-top: 2px; }
+  .trending-list__action > span { display: block; margin-top: 2px; }
   .home-dashboard__rail { display: block; }
   .content-card__footer { align-items: flex-end; }
   .content-card__actions span { display: none; }

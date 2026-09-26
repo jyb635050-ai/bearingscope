@@ -141,6 +141,8 @@ export interface TrendingTopic {
   rank: number;
   itemId: string;
   title: LocalizedText;
+  /** Original publisher URL. When present, hotspot clicks bypass the in-site drawer. */
+  url?: string;
   mentions: number;
   sourceCount: number;
   lastUpdatedAt: string;

@@ -12,6 +12,8 @@ test('desktop product workflow and eight routes', async ({ page }, testInfo) => 
   await expect(page.getByRole('heading', { name: '全球轴承情报', exact: true })).toBeVisible();
   await expect(page.locator('.primary-nav__item')).toHaveCount(8);
   await expect(page.locator('.trending-list li')).toHaveCount(5);
+  await expect(page.locator('.trending-list a').first()).toHaveAttribute('href', /^https?:\/\//);
+  await expect(page.locator('.trending-list a').first()).toHaveAttribute('target', '_blank');
   await expect(page.locator('.content-card').first()).toBeVisible();
   await expect(page.locator('html')).not.toHaveClass(/light/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);

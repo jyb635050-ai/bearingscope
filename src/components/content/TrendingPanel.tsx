@@ -16,15 +16,41 @@ export function TrendingPanel({ topics, language, onSelectTopic }: TrendingPanel
         <p>{language === 'zh' ? '近七日 · 综合时效、来源与行业事件排序' : 'Past 7 days · ranked by freshness, source and industry impact'}</p>
       </header>
       <ol className="trending-list">
-        {topics.map((topic) => (
-          <li key={topic.itemId}>
-            <span className="trending-list__rank">{topic.rank}</span>
-            <button type="button" onClick={() => onSelectTopic?.(topic.itemId)} disabled={!onSelectTopic}>
-              <strong>{localize(topic.title, language)}</strong>
+        {topics.map((topic) => {
+          const title = localize(topic.title, language);
+          const content = (
+            <>
+              <strong>{title}</strong>
               <span>{language === 'zh' ? `${topic.sourceCount} 个来源` : `${topic.sourceCount} source${topic.sourceCount === 1 ? '' : 's'}`} · {formatRelativeTime(topic.lastUpdatedAt, language)}</span>
-            </button>
-          </li>
-        ))}
+            </>
+          );
+
+          return (
+            <li key={topic.itemId}>
+              <span className="trending-list__rank">{topic.rank}</span>
+              {topic.url ? (
+                <a
+                  className="trending-list__action"
+                  href={topic.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={language === 'zh' ? `打开原文：${title}（新窗口）` : `Open original: ${title} (new tab)`}
+                >
+                  {content}
+                </a>
+              ) : (
+                <button
+                  className="trending-list__action"
+                  type="button"
+                  onClick={() => onSelectTopic?.(topic.itemId)}
+                  disabled={!onSelectTopic}
+                >
+                  {content}
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ol>
     </section>
   );
