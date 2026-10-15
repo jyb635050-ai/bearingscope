@@ -22,7 +22,7 @@ export function formatDate(value: string, language: Language, options?: Intl.Dat
 }
 
 export function formatNewsDate(value: string, language: Language): string {
-  return formatDate(value, language, { year: undefined, month: language === 'zh' ? 'numeric' : 'short', day: 'numeric' });
+  return formatDate(value, language, { year: undefined, month: language === 'zh' ? 'long' : 'short', day: 'numeric' });
 }
 
 export function formatRelativeTime(value: string, language: Language, now = new Date()): string {

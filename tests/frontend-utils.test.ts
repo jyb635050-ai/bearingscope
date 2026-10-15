@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BOOKMARKS_KEY, clearBookmarks, loadBookmarks, toggleBookmark } from '../src/lib/bookmarks';
 import { DEFAULT_FEED_FILTERS, parseFeedSearch, parsePage, serializeFeedSearch } from '../src/lib/feedUrlState';
-import { localize } from '../src/lib/i18n';
+import { formatNewsDate, localize } from '../src/lib/i18n';
 
 describe('frontend localization and URL state', () => {
+  it('shows publication dates as month and day without relative time or year', () => {
+    expect(formatNewsDate('2026-10-15T12:00:00', 'zh')).toBe('10月15日');
+    expect(formatNewsDate('2026-10-15T12:00:00', 'en')).toBe('Oct 15');
+  });
+
   it('selects the requested localized text', () => {
     expect(localize({ zh: '轴承', en: 'Bearing' }, 'zh')).toBe('轴承');
     expect(localize({ zh: '轴承', en: 'Bearing' }, 'en')).toBe('Bearing');
