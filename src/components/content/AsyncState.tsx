@@ -40,14 +40,14 @@ export function DemoNotice({
   generatedAt?: string;
 }) {
   const label = mode === 'live'
-    ? (language === 'zh' ? '真实内容快照' : 'Live content snapshot')
+    ? (language === 'zh' ? '持续更新' : 'Updated regularly')
     : mode === 'policy'
       ? (language === 'zh' ? '内容边界' : 'Content policy')
       : (language === 'zh' ? 'V1 演示数据' : 'V1 demo data');
   const defaultBody = mode === 'live'
     ? (language === 'zh'
-      ? `内容来自公开新闻索引、企业新闻页和学术元数据；只保存标题、来源与链接。${generatedAt ? ` 最近同步：${new Date(generatedAt).toLocaleString('zh-CN')}` : ''}`
-      : `Content comes from public news indexes, corporate newsrooms and scholarly metadata; only metadata and links are stored.${generatedAt ? ` Last synced: ${new Date(generatedAt).toLocaleString('en')}` : ''}`)
+      ? `全球品牌官网、行业媒体与学术研究${generatedAt ? ` · 更新于 ${new Date(generatedAt).toLocaleString('zh-CN')}` : ''}`
+      : `Global pressrooms, industry news and research${generatedAt ? ` · Updated ${new Date(generatedAt).toLocaleString('en')}` : ''}`)
     : (language === 'zh'
       ? '当前内容用于展示真实可接入的数据结构，不代表实时行业事实。'
       : 'Content demonstrates the live-ready data model and does not represent real-time industry facts.');

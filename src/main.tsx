@@ -5,6 +5,7 @@ import { BrowserRouter, HashRouter } from 'react-router-dom';
 import App from './App';
 import './i18n';
 import './styles.css';
+import './glass.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

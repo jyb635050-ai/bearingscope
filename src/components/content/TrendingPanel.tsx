@@ -21,7 +21,7 @@ export function TrendingPanel({ topics, language, onSelectTopic }: TrendingPanel
           const content = (
             <>
               <strong>{title}</strong>
-              <span>{language === 'zh' ? `${topic.sourceCount} 个来源` : `${topic.sourceCount} source${topic.sourceCount === 1 ? '' : 's'}`} · <time dateTime={topic.lastUpdatedAt}>{formatNewsDate(topic.lastUpdatedAt, language)}</time></span>
+              <span><time dateTime={topic.lastUpdatedAt}>{formatNewsDate(topic.lastUpdatedAt, language)}</time></span>
             </>
           );
 

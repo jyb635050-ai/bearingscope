@@ -9,24 +9,25 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ language, title, description, meta, children }: PageHeaderProps) {
-  const bearingHeroUrl = `${import.meta.env.BASE_URL}bearing-hero.svg`;
+  const bearingHeroUrl = `${import.meta.env.BASE_URL}bearing-product.png`;
   return (
-    <header className="page-header" style={{ backgroundImage: `url("${bearingHeroUrl}")` }}>
+    <header className="page-header">
       <div className="page-header__copy">
         <h1>{title[language]}</h1>
         <p>{description[language]}</p>
         {meta && <div className="page-header__meta">{meta}</div>}
+        {children && <div className="page-header__actions">{children}</div>}
       </div>
-      {children && <div className="page-header__actions">{children}</div>}
-      <div className="page-header__bearing" aria-hidden="true">
-        <span className="bearing-ring bearing-ring--outer" />
-        <span className="bearing-ring bearing-ring--inner" />
-        <span className="bearing-ball bearing-ball--1" />
-        <span className="bearing-ball bearing-ball--2" />
-        <span className="bearing-ball bearing-ball--3" />
-        <span className="bearing-ball bearing-ball--4" />
-        <span className="bearing-ball bearing-ball--5" />
-        <span className="bearing-ball bearing-ball--6" />
+      <div className="page-header__visual">
+        <img
+          className="page-header__product"
+          src={bearingHeroUrl}
+          alt={language === 'zh' ? '精密深沟球轴承，展示钢制内外圈、钢球与保持架' : 'Precision deep-groove ball bearing with steel rings, balls and cage'}
+          width="1536"
+          height="1024"
+          fetchPriority="high"
+          decoding="async"
+        />
       </div>
     </header>
   );
