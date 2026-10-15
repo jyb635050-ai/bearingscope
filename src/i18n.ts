@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   zh: {
     translation: {
-      brand: { name: 'BearingScope', cn: '轴承视界', descriptor: '全球轴承情报' },
+      brand: { name: 'BearingScope', cn: '轴承视界', descriptor: '全球轴承新闻' },
       nav: {
         home: '精选',
         news: '全部动态',
@@ -34,7 +34,7 @@ const resources = {
   },
   en: {
     translation: {
-      brand: { name: 'BearingScope', cn: 'Bearing Intelligence', descriptor: 'Global bearing intelligence' },
+      brand: { name: 'BearingScope', cn: 'Bearing Intelligence', descriptor: 'Global bearing news' },
       nav: {
         home: 'Briefing',
         news: 'All updates',

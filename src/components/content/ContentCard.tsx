@@ -1,6 +1,6 @@
 import { Bookmark, BookmarkCheck, ChevronRight, ExternalLink, FileText, Radio, TrendingUp } from 'lucide-react';
 import type { ContentItem } from '../../shared/types';
-import { formatRelativeTime, localize, type Language, ui } from '../../lib/i18n';
+import { formatNewsDate, localize, type Language, ui } from '../../lib/i18n';
 import { categoryLabel, kindLabel } from './contentLabels';
 import { SourceBadge } from './SourceBadge';
 
@@ -40,7 +40,7 @@ export function ContentCard({
             {kindLabel(item.kind, language)}
           </span>
           <SourceBadge source={item.source} language={language} showType={false} />
-          <time dateTime={item.publishedAt}>{formatRelativeTime(item.publishedAt, language)}</time>
+          <time dateTime={item.publishedAt}>{formatNewsDate(item.publishedAt, language)}</time>
         </div>
         {onToggleBookmark && (
           <button

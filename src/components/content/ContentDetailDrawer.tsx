@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Bookmark, BookmarkCheck, ExternalLink, ShieldCheck, X } from 'lucide-react';
 import type { ContentItem } from '../../shared/types';
-import { formatDate, localize, type Language, ui } from '../../lib/i18n';
+import { formatDate, formatNewsDate, localize, type Language, ui } from '../../lib/i18n';
 import { categoryLabel, kindLabel } from './contentLabels';
 import { SourceBadge } from './SourceBadge';
 
@@ -66,7 +66,7 @@ export function ContentDetailDrawer({ item, language, bookmarked = false, onClos
           </div>
           <div>
             <dt>{c.published}</dt>
-            <dd><time dateTime={item.publishedAt}>{formatDate(item.publishedAt, language, { dateStyle: 'medium', timeStyle: 'short' })}</time></dd>
+            <dd><time dateTime={item.publishedAt}>{formatNewsDate(item.publishedAt, language)}</time></dd>
           </div>
           <div>
             <dt>{c.fetched}</dt>

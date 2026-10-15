@@ -21,6 +21,10 @@ export function formatDate(value: string, language: Language, options?: Intl.Dat
   }).format(date);
 }
 
+export function formatNewsDate(value: string, language: Language): string {
+  return formatDate(value, language, { year: undefined, month: language === 'zh' ? 'numeric' : 'short', day: 'numeric' });
+}
+
 export function formatRelativeTime(value: string, language: Language, now = new Date()): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;

@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, Flame } from 'lucide-react';
 import type { BrandAttention, BrandWithActivity, TrendingTopic } from '../../shared/types';
-import { formatRelativeTime, localize, type Language } from '../../lib/i18n';
+import { formatNewsDate, localize, type Language } from '../../lib/i18n';
 
 interface TrendingPanelProps {
   topics: TrendingTopic[];
@@ -21,7 +21,7 @@ export function TrendingPanel({ topics, language, onSelectTopic }: TrendingPanel
           const content = (
             <>
               <strong>{title}</strong>
-              <span>{language === 'zh' ? `${topic.sourceCount} 个来源` : `${topic.sourceCount} source${topic.sourceCount === 1 ? '' : 's'}`} · {formatRelativeTime(topic.lastUpdatedAt, language)}</span>
+              <span>{language === 'zh' ? `${topic.sourceCount} 个来源` : `${topic.sourceCount} source${topic.sourceCount === 1 ? '' : 's'}`} · <time dateTime={topic.lastUpdatedAt}>{formatNewsDate(topic.lastUpdatedAt, language)}</time></span>
             </>
           );
 

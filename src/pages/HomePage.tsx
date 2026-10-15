@@ -36,7 +36,7 @@ export function HomePage({ language }: PageLanguageProps) {
     <main className="page page--home">
       <PageHeader
         language={language}
-        title={{ zh: '全球轴承情报', en: 'Global bearing intelligence' }}
+        title={{ zh: '全球轴承新闻', en: 'Global bearing news' }}
         description={{ zh: '制造、市场与技术信号，一处掌握。', en: 'Manufacturing, market and technology signals in one place.' }}
         meta={(
           <>
